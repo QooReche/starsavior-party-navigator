@@ -2,7 +2,7 @@
 
 ## 입력과 적용 범위
 
-`tools/build_foe_cosmo.py --tables <26752678 추출 T>`로 `data/foe_cosmo_extra.json`을 생성했음. 비공개 원문 표는 넣지 않았음. 표 경로는 `E:/AI_mk2/rebuild_26752678/T`, 코드 경로는 `E:/AI_mk2/decomp_26752678/set10/clean`을 사용했음. 아래 N은 해당 경로의 `NKM/NKM.decompiled.cs`임.
+`tools/build_foe_cosmo.py --tables <26752678 추출 T>`로 `data/foe_cosmo_extra.json`을 생성했음. 비공개 원문 표는 넣지 않았음. 표 경로는 `E:/AI_mk2/_builds/26752678/rebuild/T`, 코드 경로는 `E:/AI_mk2/_builds/26752678/decomp/set10/clean`을 사용했음. 아래 N은 해당 경로의 `NKM/NKM.decompiled.cs`임.
 
 설치본 buildid는 26752678이며 `set10/dll` 10개와 설치 DLL의 SHA-256이 전부 일치했음. 비공개 저장소 `check_build.py`는 그 저장소의 옛 26610546 디컴파일과 다르다고 보고했음. 해당 옛 코드를 근거로 쓰지 않고 사용자 지정 재추출본을 대조했음. 외부 저장소 갱신·메인 작업 트리 수정·push는 하지 않았음.
 
@@ -58,8 +58,8 @@
 재현 명령:
 
 ```text
-python -X utf8 -I tools/build_foe_cosmo.py --tables E:/AI_mk2/rebuild_26752678/T
-python -X utf8 -I tools/build_cosmo_raid.py --tables E:/AI_mk2/rebuild_26752678/T --season 1023 --build 26752678
+python -X utf8 -I tools/build_foe_cosmo.py --tables E:/AI_mk2/_builds/26752678/rebuild/T
+python -X utf8 -I tools/build_cosmo_raid.py --tables E:/AI_mk2/_builds/26752678/rebuild/T --season 1023 --build 26752678
 python -X utf8 -I tools/build_cosmo_raid.py --season 1023 --season-dates-only --start 2026-11-19T12:00:00+09:00 --end 2026-11-26T04:00:00+09:00 --settle-end 2026-12-03T04:00:00+09:00 --period-src "notice arca 189523458(점검 종료 12:00)"
 python -X utf8 -I tests/baskerville_client_test.py --mutations
 python -X utf8 -I tools/build_simpack.py

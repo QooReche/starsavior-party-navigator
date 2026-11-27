@@ -59,7 +59,7 @@
 | `test_direct_party.py --mutations` | 10그룹·변이 1개 통과 |
 | `test_cosmo_direct.py` | 3그룹 통과, 실제 워커로 3보스 × 2판 확인 |
 
-브라우저 명령은 `E:\AI_mk2\venv-pw\Scripts\python.exe -X utf8 tests/e2e/파일명`으로 실행했음. `PLAYWRIGHT_BROWSERS_PATH=E:\AI_mk2\pw-browsers`, `PN_E2E_WORKERS=1`이며 모두 한 파일씩 실행했음. 신규 탐색 시험은 실제 planner와 제어된 가짜 워커를 사용하며 `progs`·`via`도 반환함. 진행률이 실제로 증가하고 배우 위치가 0보다 큰지, 같은 문구의 다음 단계 초기화·취소·늦은 응답·재실행·결과 위치·그웬 1명·재반응 없음까지 확인했음. 실제 탐색 결과 품질이나 전역 클라 일치율 검증은 아님.
+브라우저 명령은 `E:\AI_mk2\_env\venv-pw\Scripts\python.exe -X utf8 tests/e2e/파일명`으로 실행했음. `PLAYWRIGHT_BROWSERS_PATH=E:\AI_mk2\_env\pw-browsers`, `PN_E2E_WORKERS=1`이며 모두 한 파일씩 실행했음. 신규 탐색 시험은 실제 planner와 제어된 가짜 워커를 사용하며 `progs`·`via`도 반환함. 진행률이 실제로 증가하고 배우 위치가 0보다 큰지, 같은 문구의 다음 단계 초기화·취소·늦은 응답·재실행·결과 위치·그웬 1명·재반응 없음까지 확인했음. 실제 탐색 결과 품질이나 전역 클라 일치율 검증은 아님.
 
 UX 시험에서 `pause_at(Date.now())`가 명령 도착 전에 과거가 되는 경합이 한 번 발생해 목표를 1초 뒤로 지정했음. 해당 식은 기준 커밋 `0f7b89f`와 같음을 확인했으며 기준 커밋의 원본 화면·원본 idle 검사 1회는 통과했음. 기존부터 항상 실패했다고 판정하지 않았음.
 

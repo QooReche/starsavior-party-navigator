@@ -7,9 +7,9 @@ collect: Playwright 로 index.html 을 내 정보(비공개 파일)와 함께 �
 eval: 네이티브 엔진(battlesim.web.run_auto = 작업자와 같은 함수)으로
   ① 화면 예선을 재현(후보 전부 8판, 상위 20팀 32판, 시드 1, 순위 scrCmp) — 사례 팀을 후보에 넣었다면 몇 위인지도 봄
   ② 예선 상위·사례 팀을 같은 시드(20261122)·400판으로 재평가하고 진행도 상위 20%·클리어율 차의 부트스트랩 95% 구간.
-결과(계정 수치)는 --out(기본 E:/AI_mk2/role-private/casebook_myinfo/site_reco)에만 씀.
+결과(계정 수치)는 --out(기본 E:/AI_mk2/_private/role-private/casebook_myinfo/site_reco)에만 씀.
 
-  E:/AI_mk2/venv-pw/Scripts/python.exe -X utf8 tools/stage_reco_check.py collect --myinfo PATH
+  E:/AI_mk2/_env/venv-pw/Scripts/python.exe -X utf8 tools/stage_reco_check.py collect --myinfo PATH
   python -X utf8 -I tools/stage_reco_check.py eval [--workers 4]
 """
 import argparse
@@ -27,7 +27,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-OUT = Path('E:/AI_mk2/role-private/casebook_myinfo/site_reco')
+OUT = Path('E:/AI_mk2/_private/role-private/casebook_myinfo/site_reco')
 SEED = 20261122
 TOP_Q = 0.2
 CASES = [   # tools/casebook_search_check.py STAGE_CASES 와 같음
@@ -101,7 +101,7 @@ def serve():
 
 
 def collect(myinfo, out):
-    os.environ.setdefault('PLAYWRIGHT_BROWSERS_PATH', r'E:\AI_mk2\pw-browsers')
+    os.environ.setdefault('PLAYWRIGHT_BROWSERS_PATH', r'E:\AI_mk2\_env\pw-browsers')
     from playwright.sync_api import sync_playwright
     info = Path(myinfo).read_text(encoding='utf-8')
     seed = {'pn.myinfo': info, 'pn.simauto': '0'}
@@ -272,7 +272,7 @@ def full_screen(out, workers):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('cmd', choices=['collect', 'eval', 'full'])
-    ap.add_argument('--myinfo', default='E:/AI_mk2/role-private/op4212/myinfo_1121.json')
+    ap.add_argument('--myinfo', default='E:/AI_mk2/_private/role-private/op4212/myinfo_1121.json')
     ap.add_argument('--out', default=str(OUT))
     ap.add_argument('--workers', type=int, default=4)
     a = ap.parse_args()

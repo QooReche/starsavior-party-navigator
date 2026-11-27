@@ -27,8 +27,8 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), 
 sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "tools"))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-if os.path.isdir(r"E:\AI_mk2\pw-browsers"):
-    os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", r"E:\AI_mk2\pw-browsers")
+if os.path.isdir(r"E:\AI_mk2\_env\pw-browsers"):
+    os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", r"E:\AI_mk2\_env\pw-browsers")
 
 
 from tools.runtime import low_priority

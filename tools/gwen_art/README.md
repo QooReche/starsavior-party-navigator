@@ -65,7 +65,7 @@ investigate는 원본의 돋보기·장갑·소매 바깥쪽만 0/-2/-4/-2px 이
 python -X utf8 build_party_html.py index.html
 node tests/ux_ui_test.js
 node tests/public_ui_test.js
-E:/AI_mk2/venv-pw/Scripts/python.exe -X utf8 tests/e2e/test_gwen_loading.py --shots
+E:/AI_mk2/_env/venv-pw/Scripts/python.exe -X utf8 tests/e2e/test_gwen_loading.py --shots
 python -X utf8 tools/run_tests.py
 python -X utf8 tests/golden_check.py
 ```

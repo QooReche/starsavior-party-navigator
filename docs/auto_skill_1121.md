@@ -22,7 +22,7 @@
 - 디컴파일: `STARSAVIOR_STATIC/decompiled/`, `check_build.py` 결과 설치본·디컴파일 모두 26752678이고 DLL 10개 불일치 0임.
   아래 `NKM`·`NKC`는 그 안의 `NKM/NKM.decompiled.cs`·`NKC/NKC.decompiled.cs` 줄 번호임. 3월판은 쓰지 않았음.
 - 표: `starsavior-static-data/tables/`(SKILL_TEMPLET_1·2, UNIT_TEMPLET_BASE1, BLOSSOM_TEMPLET, Plain/AUTO_SKILL_TEMPLET·AUTO_SKILL_TARGET_TEMPLET)와
-  `E:/AI_mk2/rebuild_26752678/T/CLIENT_SKILL_TEMPLET_1.json`임. 프레이·왈츠 아세라의 AutoSkillId·쿨은 두 표가 같음.
+  `E:/AI_mk2/_builds/26752678/rebuild/T/CLIENT_SKILL_TEMPLET_1.json`임. 프레이·왈츠 아세라의 AutoSkillId·쿨은 두 표가 같음.
 - 클라 원문은 싣지 않고 줄 번호와 짧은 요약만 적음.
 
 ## 클라 오토 한 턴의 순서

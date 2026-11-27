@@ -12,7 +12,7 @@
 작업 브랜치 allow-d에는 upstream이 없어 pull이 실패했으며 임의로 main을 병합하지 않았음.
 
 이 문서의 `NKM`, `NT`, `ST`, `NKC`는 위 비공개 저장소 `decompiled/` 아래의
-각 `어셈블리/어셈블리.decompiled.cs`임. `T`는 `E:/AI_mk2/rebuild_26752678/T`임.
+각 `어셈블리/어셈블리.decompiled.cs`임. `T`는 `E:/AI_mk2/_builds/26752678/rebuild/T`임.
 특히 NKC는 앞선 보고서의 줄 번호와 달라 현재 파일에서 다시 찾았음.
 3월판 디컴파일, 계정 입력, 공략의 승률을 근거로 쓰지 않았음.
 

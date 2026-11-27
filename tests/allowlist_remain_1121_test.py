@@ -23,7 +23,7 @@ sys.path[:0] = [str(ROOT)]
 from battlesim.starsavior import cosmo_raid as C   # noqa: E402
 
 G = C.load()
-REBUILD_T = Path(os.environ.get('REBUILD_26752678', 'E:/AI_mk2/rebuild_26752678')) / 'T'
+REBUILD_T = Path(os.environ.get('REBUILD_26752678', 'E:/AI_mk2/_builds/26752678/rebuild')) / 'T'
 
 
 def client_hud(base, max_damage, max_hp, hp):

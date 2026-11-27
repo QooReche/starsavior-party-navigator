@@ -10,7 +10,7 @@
 ## 자료와 범위
 
 - 클라: `STARSAVIOR_STATIC=E:/AI_mk2/starsavior-static-data`의 `decompiled/`(빌드 26752678). NKM = `NKM/NKM.decompiled.cs`, ST = `Star.Templets/Star.Templets.decompiled.cs`, NT = `NKM.Templets/NKM.Templets.decompiled.cs`. 3월판 코드는 쓰지 않았음.
-- 표: `E:/AI_mk2/rebuild_26752678/T/CLIENT_*.json`. ORBITAL_ARRAY·ORBITAL_DOMAIN·ORBITAL_LEVEL_GROUP·SE_TEMPLET_ORBITAL_ARRAY·DAMAGE 표는 `static-data/tables/`와 행이 모두 같았음. BATTLE_EFFECT는 T 쪽에 2행(95008·940321)이 더 있으나 영역 행(72xxxxx)은 같음.
+- 표: `E:/AI_mk2/_builds/26752678/rebuild/T/CLIENT_*.json`. ORBITAL_ARRAY·ORBITAL_DOMAIN·ORBITAL_LEVEL_GROUP·SE_TEMPLET_ORBITAL_ARRAY·DAMAGE 표는 `static-data/tables/`와 행이 모두 같았음. BATTLE_EFFECT는 T 쪽에 2행(95008·940321)이 더 있으나 영역 행(72xxxxx)은 같음.
 - 엔진: `battlesim/mc.py`(이 작업 트리, 커밋 16d3b88 기준). 줄 번호는 이 커밋의 줄임.
 - 앞 조사에서 확인을 끝낸 팀 합산 피해식·큐브 회복·수호 분담·팀 노바는 `docs/allowlist_break_1121.md`, `docs/casebook_engine_check.md` M9를 따르며 이번에 다시 읽어 같은 줄을 확인했음.
 
@@ -56,7 +56,7 @@
 
 ## 측정
 
-`tools/measure_break_skill.py`(새 도구)로 판마다 발동 TURN·영역 시작/끝·포인트 적립·보스 격파를 셈. TURN은 그 행동이 시작될 때의 전역 행동 번호(화면 좌상단 TURN과 같은 정의, `docs/op4212_gap_1121.md`). 판별 원값은 `E:/AI_mk2/role-private/op4212/brkskill/`에만 둠.
+`tools/measure_break_skill.py`(새 도구)로 판마다 발동 TURN·영역 시작/끝·포인트 적립·보스 격파를 셈. TURN은 그 행동이 시작될 때의 전역 행동 번호(화면 좌상단 TURN과 같은 정의, `docs/op4212_gap_1121.md`). 판별 원값은 `E:/AI_mk2/_private/role-private/op4212/brkskill/`에만 둠.
 
 작전 42-12, 내 정보 1121, 실제 장착(스타피어서 Lv4), seed 7, 1000판. 엔진 코드를 바꾸지 않았으므로 전후 비교는 없음(같은 입력의 앞 측정 클리어 23.9%·발동 1.31회와 같은 수준).
 

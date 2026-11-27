@@ -64,6 +64,6 @@
 ## 최종 확인
 
 - `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data`를 지정한 `python -X utf8 -I tools/run_tests.py --rebuild`: **131 통과 / 실패 0**. 환경 건너뜀 2건(COSMO_TABLES·옆 journeyhelper 부재)은 기준선과 같았음. 로그 `local/rk_final_tests.log`.
-- 관련 e2e만 실행: `E:\AI_mk2\venv-pw\Scripts\python.exe -X utf8 tests/e2e/test_page.py rekindle_ui sim_auto_and_override --shots local/rk_shots`: **2 통과 / 실패 0**. 재점화 선택·시뮬 옵션 전달·타 콘텐츠 제외·저장, 실제 브라우저 시뮬 워커 실행을 확인했음. 로그 `local/rk_e2e.log`.
+- 관련 e2e만 실행: `E:\AI_mk2\_env\venv-pw\Scripts\python.exe -X utf8 tests/e2e/test_page.py rekindle_ui sim_auto_and_override --shots local/rk_shots`: **2 통과 / 실패 0**. 재점화 선택·시뮬 옵션 전달·타 콘텐츠 제외·저장, 실제 브라우저 시뮬 워커 실행을 확인했음. 로그 `local/rk_e2e.log`.
 - 첫 재빌드 시험에서 편집 과정의 CRLF 때문에 JS 소스 추출 시험 2개가 실패했음. 기존 LF로 복원한 뒤 해당 시험과 전체 시험이 통과했음. 기준선에는 없던 편집 문제였고 엔진 식을 바꿔 시험을 맞추지 않았음.
 - `git diff --check` 통과. 엔진 규칙·시험·설명·빠른 계산·생성물만 변경했음. HEAD는 시작 커밋 그대로이며 커밋·푸시·HANDOFF 수정 없이 마무리했음.

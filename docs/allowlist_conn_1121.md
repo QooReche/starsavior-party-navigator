@@ -8,7 +8,7 @@
 
 - 클라 코드: 비공개 static-data `decompiled/`. `check_build.py` 결과 설치본·디컴파일 모두 26752678, DLL 10개 불일치 0.
   NKM·NT·ST는 각각 NKM·NKM.Templets·Star.Templets 어셈블리 파일임. 3월판은 쓰지 않았음.
-- 표: `E:/AI_mk2/rebuild_26752678/T`(26752678). static-data `tables/`는 26610546판이라 쓰지 않았음.
+- 표: `E:/AI_mk2/_builds/26752678/rebuild/T`(26752678). static-data `tables/`는 26610546판이라 쓰지 않았음.
   옛 빌더(`build_foe_auto`·`build_foe_spawn`)가 static 형태 폴더를 읽어서, `tools/client_view.py`로 T의 필요한 표만
   주석을 벗겨 저장소 밖 비공개 폴더에 펼친 뒤 썼음. 값은 바꾸지 않음.
 - 계정 자료·공략 수치는 쓰지 않았음. 결과 영향은 공개 standard 육성으로만 쟀음.

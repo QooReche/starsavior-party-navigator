@@ -9,7 +9,7 @@
 
 `E:/AI_mk2/starsavior-static-data`에서 `python -X utf8 check_build.py` → 설치본·디컴파일 26752678, DLL 10개 불일치 0.
 줄 번호 약자: `NKM`·`NT`(NKM.Templets)·`ST`(Star.Templets)·`NKC` = 비공개 `decompiled/` 의 각 어셈블리 파일,
-`T` = `E:/AI_mk2/rebuild_26752678/T`, `STRING` = `T/hard/STRING_COMMON.json`. 3월판 디컴파일·계정 자료는 쓰지 않았음.
+`T` = `E:/AI_mk2/_builds/26752678/rebuild/T`, `STRING` = `T/hard/STRING_COMMON.json`. 3월판 디컴파일·계정 자료는 쓰지 않았음.
 
 «서버 전용»으로 남기기 전에 아래를 모두 봤음.
 

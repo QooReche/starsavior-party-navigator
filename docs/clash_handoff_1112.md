@@ -69,7 +69,7 @@
 - 전용 결함 주입: 강제 협공 제거·격파 필터 무시·조각 병합 제거·boss_kill 제거·소환/스폰 부가 자료 제거·버전 업그레이드 제거·스킬 순서 강제 기본기·브라우저 조각 누락·BuffDesc 3%를 스탯으로 사용·legacy 대상 추첨 실행 10종 모두 assertion 실패를 확인하고 원복했음(`local/clash_mutations.py`). JS의 clash 기간 게이트 제거 1종도 검출했음.
 - 첫 전체 검사에서 새 코드로 생긴 `coop_order_test`·`savior_mapping_test` 실패를 고쳤음. 강제 협공 후보가 없는 적은 협공 호출을 생략하고, 아군 빌더와 공유하는 필터 함수의 새 동작을 적 강제 협공 줄로 한정했음. 기존 시험의 기대값을 바꾸지 않았음. 관련 5개 시험 재실행 통과했음.
 - `accel-golden/golden.py`를 main `82c612f`와 wt-clash 각각 실행: 기본/전체 legacy 78/78 동일, 실행 오류 0. 출력 `local/clash_main.json`·`local/clash.json`. 기존 콘텐츠 계산·quick 값을 그대로 유지했음. 해시 고정 시험은 새 규칙을 legacy off로 고정했음.
-- 최종 `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data`, `PN_E2E_LOW_MEMORY=1` 지정 후 `python -X utf8 -I tools/run_tests.py --rebuild --e2e E:\AI_mk2\venv-pw\Scripts\python.exe`: **130 통과/실패 0**, 위 환경 자료 없는 2건만 건너뛰었음. 실행 로그 `local/clash_final.log`. 격전 의뢰 실제 결과 카드·기간 종료 게이트 통과, 최종 스크린샷 `local/shots/clash.png` 육안 확인했음.
+- 최종 `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data`, `PN_E2E_LOW_MEMORY=1` 지정 후 `python -X utf8 -I tools/run_tests.py --rebuild --e2e E:\AI_mk2\_env\venv-pw\Scripts\python.exe`: **130 통과/실패 0**, 위 환경 자료 없는 2건만 건너뛰었음. 실행 로그 `local/clash_final.log`. 격전 의뢰 실제 결과 카드·기간 종료 게이트 통과, 최종 스크린샷 `local/shots/clash.png` 육안 확인했음.
 - **판단 필요는 2번 패배 제한 수치만 남았음(→ 2026-11-13 사용자 판단으로 제한 없음 반영).** 독립 리뷰는 커밋 전 단계에서 별도로 진행할 것. 이 작업에서는 병렬 작업자·커밋·푸시·HANDOFF.md 수정하지 않았음.
 
 ## 패배 제한 없음 검증 — 2026-11-13

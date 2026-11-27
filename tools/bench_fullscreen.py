@@ -10,10 +10,10 @@ eval: 화면 1안을 네이티브 엔진(battlesim.web.run_auto = 작업자와 �
   평균 진행도·클리어율과 부트스트랩 95% 구간. 1판 훑기로 고른 팀의 소표본 선택 편향은 이 독립 재평가로 판정한다.
 report: 스테이지별 훑기 발동·시간·판 수·1안 진행도 표.
 
-계정 수치(원값)는 --out(기본 E:/AI_mk2/role-private/casebook_myinfo/site_reco/fullscreen)에만 쓴다.
+계정 수치(원값)는 --out(기본 E:/AI_mk2/_private/role-private/casebook_myinfo/site_reco/fullscreen)에만 쓴다.
 
-  set PLAYWRIGHT_BROWSERS_PATH=E:\\AI_mk2\\pw-browsers
-  E:/AI_mk2/venv-pw/Scripts/python.exe -X utf8 tools/bench_fullscreen.py browser --myinfo PATH
+  set PLAYWRIGHT_BROWSERS_PATH=E:\\AI_mk2\\_env\\pw-browsers
+  E:/AI_mk2/_env/venv-pw/Scripts/python.exe -X utf8 tools/bench_fullscreen.py browser --myinfo PATH
   python -X utf8 -I tools/bench_fullscreen.py eval --workers 8
   python -X utf8 -I tools/bench_fullscreen.py report
 """
@@ -28,7 +28,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-OUT = Path('E:/AI_mk2/role-private/casebook_myinfo/site_reco/fullscreen')
+OUT = Path('E:/AI_mk2/_private/role-private/casebook_myinfo/site_reco/fullscreen')
 SEED = 20261122
 # (이름, 콘텐츠 key, 탭(None = 아무 탭), 스테이지 이름) — 어려운 3곳(docs/casebook_search_check.md) + 쉬운 2곳
 STAGES = [
@@ -71,7 +71,7 @@ COLLECT_JS = """() => {
 
 
 def browser(myinfo, out, only, timeout, profile=False, chunk=None):
-    os.environ.setdefault('PLAYWRIGHT_BROWSERS_PATH', r'E:\AI_mk2\pw-browsers')
+    os.environ.setdefault('PLAYWRIGHT_BROWSERS_PATH', r'E:\AI_mk2\_env\pw-browsers')
     sys.path.insert(0, str(ROOT / 'tests' / 'e2e'))
     import test_page as tp
     from playwright.sync_api import sync_playwright

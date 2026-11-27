@@ -138,7 +138,7 @@ NKM:9104–9114,9146–9153의 검사·자동 대상 순서로 고쳤고 실제 
 
 공용 `E:/AI_mk2/_testlock` 디렉터리를 획득한 뒤
 `STARSAVIOR_STATIC=E:/AI_mk2/starsavior-static-data`,
-`COSMO_TABLES=E:/AI_mk2/rebuild_26752678/T`로
+`COSMO_TABLES=E:/AI_mk2/_builds/26752678/rebuild/T`로
 `python -X utf8 -I tools/run_tests.py --rebuild --strict`를 실행했음.
 245파일 통과·실패0·건너뜀0. 종료 후 잠금을 해제했음.
 워커·브라우저 e2e는 실행하지 않았음. 전체 검증의 `unsupported_gate_test.py`도 통과했음.

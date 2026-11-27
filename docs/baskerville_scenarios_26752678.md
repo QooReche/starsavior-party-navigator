@@ -4,8 +4,8 @@
 
 ## 근거 위치
 
-- N = `E:/AI_mk2/decomp_26752678/set10/clean/NKM/NKM.decompiled.cs`.
-- T = `E:/AI_mk2/rebuild_26752678/T/`.
+- N = `E:/AI_mk2/_builds/26752678/decomp/set10/clean/NKM/NKM.decompiled.cs`.
+- T = `E:/AI_mk2/_builds/26752678/rebuild/T/`.
 - 비공개 static-data를 pull했고 `check_build.py`를 실행했음. 비공개 저장소의 디컴파일은 26610546으로 설치본과 달랐음. 사용자 지정 26752678 재추출본의 `set10/dll` 10개를 이 PC 설치 DLL과 SHA-256으로 다시 비교하여 10/10 일치를 확인했음. 옛 디컴파일은 근거로 쓰지 않았음.
 - 작업 브랜치 `bask-s23`는 추적 브랜치가 없어 pull이 적용되지 않았음. 메인 작업 트리는 수정하지 않았음.
 

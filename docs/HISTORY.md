@@ -885,7 +885,7 @@ e2e는 `test_placement.py`·`test_cosmo_direct.py`와 `test_page.py`의 일반 �
 
 기존 구현을 동결한 합성 600건에서 결과·동점 순서가 일치했고 전수 대조·10개 미만·멀티워드 마스크·예산 경계·실제 검색의 경고 생략·비동기 취소를 검사했음. 검사 횟수는 합성 목록 합계 129,731회에서 31,597회로 줄었음. 가지치기·소진 오탐·남은 세 갈래·엄격한 생략 조건 변이 10건, 기존 재시도 12건, 학습 4건, 학습 상한 12건을 검출했음. 기존 재시도 변이의 오래된 문자열 앵커를 현재 코드에 맞췄음. CLI의 정밀 목록 출력과 로컬 측정 도구를 추가했으며 계정 입력·후보·점수·측정 결과는 공개 자료와 시험 고정 자료에 넣지 않았음.
 
-핵심·후속 변경은 고정 커밋 범위로 독립 리뷰했고 확정 결함 지적은 없었음. 기준선은 단위 219개 통과·실패 0개였음. 두 빌드와 관련 e2e 8개 흐름을 통과한 뒤 `python -X utf8 -I tools/run_tests.py --e2e E:\AI_mk2\venv-pw\Scripts\python.exe --timeout 1500`을 1회 실행했음. 결과는 240개 파일 통과·1개 실패였고, e2e 21개 파일과 종합 페이지 내부 71개 항목은 모두 통과했음. 실제 시뮬 워커는 2개로 제한했음.
+핵심·후속 변경은 고정 커밋 범위로 독립 리뷰했고 확정 결함 지적은 없었음. 기준선은 단위 219개 통과·실패 0개였음. 두 빌드와 관련 e2e 8개 흐름을 통과한 뒤 `python -X utf8 -I tools/run_tests.py --e2e E:\AI_mk2\_env\venv-pw\Scripts\python.exe --timeout 1500`을 1회 실행했음. 결과는 240개 파일 통과·1개 실패였고, e2e 21개 파일과 종합 페이지 내부 71개 항목은 모두 통과했음. 실제 시뮬 워커는 2개로 제한했음.
 
 유일한 실패는 `growth_overwrite_review_test.js`의 VM에 새 보스 이름 콜백 `csBoss`가 없던 것이었음. 변경 전 템플릿으로 통과함을 확인한 뒤 시험 환경에 콜백을 추가하고 실제 검색에 같은 함수가 전달되는지도 검사했음. 해당 시험과 기존 변이 7건이 통과했고, 전체 실행 종료 뒤 해당 파일만 `tools/run_tests.py growth_overwrite_review --timeout 1500`으로 재검증해 1개 통과·실패 0개였음. 최종 미해결 실패는 없으며 전체 e2e는 반복하지 않았음. 원문 표 대조 2건은 `COSMO_TABLES` 미설정으로 건너뛰었음.
 
@@ -917,7 +917,7 @@ PC 26752678 설치 DLL 해시를 지정 디컴파일과 대조했음. 선샤인 
 
 최종 감사는 67형태 standard/none의 정적 미지원 0건, 67형태×5전투×3판의 실행 기록 0건이었음. 대상 6형태×4전투×8판 모두 진행도>0이며 23조합은 기존과 수치가 같았음. 클레어 개화의 태양 회랑 250층은 진행도가 0.5104→0.5361, 클리어는 양쪽 0/8이었음. 계정 결과가 아닌 공개 표준 육성 표본임. 무작위 3형태·두 표지 스킬은 각각 subTest로 검사했으며 새 변이 11종에서 17개 assertion 실패를 검출했음. 기존 자동 대상 변이 16개와 지원 보고를 항상 비우는 캐시 변이 1개도 검출했음.
 
-수정 전 기준선은 219개 파일 통과·실패 0이었음. 지정 전체 명령 `python -X utf8 -I tools/run_tests.py --e2e E:\AI_mk2\venv-pw\Scripts\python.exe --timeout 1500`을 한 번 실행해 239개 통과·2개 실패였음. e2e 21개와 종합 페이지 내부 71개는 모두 통과했음. 실패 두 건은 단독 재현 후 수정했음: 다른 native 구원자로 퍼진 조기 반환을 스마일·구원자 길레로 제한했고, 실제 미지원이 모두 해소돼 빈 보고만 비교하던 캐시 시험에는 합성 미지원 효과를 추가했음. 기존 보호 assertion·해시 기대값을 약화하거나 바꾸지 않았음. 수정 뒤 두 실패 파일과 새 시험의 단독 재실행은 3개 파일 모두 통과했음. 생성물 재생성 후 캐시·표지·규칙·cleanup을 포함한 마지막 관련 시험 12개 파일도 실패 0이었음. 원문 표 대조 2건은 기준선과 동일하게 COSMO_TABLES 미설정으로 건너뜀. 전체 e2e는 반복하지 않았음. 로그는 `local/unsup/final-tests.log`, `failures-reproduced.log`, `failures-fixed.log`, `final-focused.log`임.
+수정 전 기준선은 219개 파일 통과·실패 0이었음. 지정 전체 명령 `python -X utf8 -I tools/run_tests.py --e2e E:\AI_mk2\_env\venv-pw\Scripts\python.exe --timeout 1500`을 한 번 실행해 239개 통과·2개 실패였음. e2e 21개와 종합 페이지 내부 71개는 모두 통과했음. 실패 두 건은 단독 재현 후 수정했음: 다른 native 구원자로 퍼진 조기 반환을 스마일·구원자 길레로 제한했고, 실제 미지원이 모두 해소돼 빈 보고만 비교하던 캐시 시험에는 합성 미지원 효과를 추가했음. 기존 보호 assertion·해시 기대값을 약화하거나 바꾸지 않았음. 수정 뒤 두 실패 파일과 새 시험의 단독 재실행은 3개 파일 모두 통과했음. 생성물 재생성 후 캐시·표지·규칙·cleanup을 포함한 마지막 관련 시험 12개 파일도 실패 0이었음. 원문 표 대조 2건은 기준선과 동일하게 COSMO_TABLES 미설정으로 건너뜀. 전체 e2e는 반복하지 않았음. 로그는 `local/unsup/final-tests.log`, `failures-reproduced.log`, `failures-fixed.log`, `final-focused.log`임.
 
 quick 원시 표본이 없어 2워커로 2,323표본×40판을 생성하고 재보정했음. data/quick.json의 pc·sm·calib만 바뀌었으며 base params는 같음. 표본 확대·누적 엔진 교정을 포함하므로 계수 변화 전체를 이번 8건 효과로 해석하지 않음. 범위 축소 뒤 비대상 6명×2전투×8판의 수치가 같고 수치 경로도 보존됨을 확인해 보정 표본을 유지했음. 길드 방어전 시즌4 종료로 guild_sim은 기존 방침대로 새 시즌 반영 때 재생성하며 사유를 도장에 남겼음. 생성물 변경은 `data/quick.json`, `sim/manifest.json`, `tools/gen_rules_stamp.json`임. HTML은 재생성 후 동일했음.
 
@@ -927,7 +927,7 @@ quick 원시 표본이 없어 2워커로 2,323표본×40판을 생성하고 재�
 
 브레이크 기준 점수 동점은 반대 점수, 다시 같으면 클리어율로 고르게 했음. 미장착을 포함한 전체 후보의 기준·반대 점수가 모두 같으면 `brkTie: true`를 반환하고 자동 결과 팀 머리와 표에 «브레이크 스킬: 점수 차이 없음(아무거나 장착 가능)»을 표시함. 클리어율 비교로 선택된 후보가 있어도 두 점수 전체 동점이면 안내하며 직접 편성에는 brk null로 가져옴. 후보 하나나 결과 누락에는 전체 동점을 선언하지 않음. 바스커빌 전용 예외 없이 최종 순위에 적용했으며 엔진은 바꾸지 않았음. 순위·문구·가져오기 단위 시험과 변이, 합성 학습 e2e 및 화면 폭별 문구 검사를 추가했음.
 
-학습 활성화와 동점 변경을 각각 고정 커밋 범위로 독립 리뷰했고 지적 없었음. 검증은 한 번에 하나씩 실행했으며 실제 시뮬 워커는 2개로 제한했음. 브레이크 단위 11개·변이 12개, 학습 상한 변이 12개 통과했음. 변이 첫 실행에서 반대 점수 동등 검사 제거가 살아남아 모든 후보의 기준 점수는 같고 반대 점수는 다른 시험으로 보완했음. 두 빌드 및 관련 e2e 12개 흐름 통과 후 `python -X utf8 -I tools/run_tests.py --e2e E:\AI_mk2\venv-pw\Scripts\python.exe --timeout 1500`을 1회 실행해 239개 파일 통과·실패 0개였음(단위 218개·e2e 21개, 종합 페이지 내부 71개 항목). 원문 표 대조 2건은 `COSMO_TABLES` 미설정으로 건너뛰었음. 앞선 단위 실행은 216개 통과·1개 실패였으며, 실행 중 템플릿을 수정해 발생한 빌드 전 index 불일치였음. 빌드 후 해당 시험 단독 14개와 마지막 전체 검증에서 통과해 타이밍 실패로 처리하지 않았음. 벤치는 재실행하지 않았음.
+학습 활성화와 동점 변경을 각각 고정 커밋 범위로 독립 리뷰했고 지적 없었음. 검증은 한 번에 하나씩 실행했으며 실제 시뮬 워커는 2개로 제한했음. 브레이크 단위 11개·변이 12개, 학습 상한 변이 12개 통과했음. 변이 첫 실행에서 반대 점수 동등 검사 제거가 살아남아 모든 후보의 기준 점수는 같고 반대 점수는 다른 시험으로 보완했음. 두 빌드 및 관련 e2e 12개 흐름 통과 후 `python -X utf8 -I tools/run_tests.py --e2e E:\AI_mk2\_env\venv-pw\Scripts\python.exe --timeout 1500`을 1회 실행해 239개 파일 통과·실패 0개였음(단위 218개·e2e 21개, 종합 페이지 내부 71개 항목). 원문 표 대조 2건은 `COSMO_TABLES` 미설정으로 건너뛰었음. 앞선 단위 실행은 216개 통과·1개 실패였으며, 실행 중 템플릿을 수정해 발생한 빌드 전 index 불일치였음. 빌드 후 해당 시험 단독 14개와 마지막 전체 검증에서 통과해 타이밍 실패로 처리하지 않았음. 벤치는 재실행하지 않았음.
 
 ## 2026-11-20 — 코스모 학습 선별 기본 활성화와 상한 분리
 
@@ -948,7 +948,7 @@ quick 원시 표본이 없어 2워커로 2,323표본×40판을 생성하고 재�
 - 고정 난이도 e2e의 후보 전부 보존·현재 시즌 보스 대조는 이미 반영돼 있었음. 자동 난이도 e2e에 남은 keep=40도 후보 전부 보존으로 맞췄음. 새 합성 시험은 초기·3배 실패→전체 확대 성공, 끝까지 실패·실제 구원자 이름·그웬 오류, 기존 job 미요청, 각 상한, ETA, 반감·빠른 선별 후보 복귀, 누락·취소·워커 정리를 검사함. 실제 페이지에서 확대 결과의 «직접 편성에서 고치기»·저장까지 확인했음.
 - 독립 리뷰 `eec54a5..e3bc61d`의 지적 두 건을 반영했음. 조합 검사 상한에 걸린 성공 결과에도 제한 안내를 추가했고 후보 안의 최적이라고 단정하는 문구를 없앴음. 빠른 선별 미계산 후보를 큰 배열 인수로 펼치던 부분은 반복 삽입으로 바꿔 JS 인수 개수 제한을 피했음. 부분 성공 안내·빠른 선별 복귀 회귀와 변이를 추가했음. 후속 `e3bc61d..fb2d2db`, `fb2d2db..e83bf25` 리뷰에서 두 지적 해소·추가 결함 없음으로 확인했음.
 - 기준선은 211개 통과 / 실패 0개였음(원문 표 대조 1건 환경 변수 미설정으로 건너뜀). 새 단위 시험 6개 묶음, 새 변이 12/12개와 기존 속도 변이 10/10개를 검출했고 새 페이지 시험 1개를 통과했음. 시즌 1023 자료를 지정 시작·종료·결산 날짜와 공지 출처를 유지해 재생성했으며 구조 대조에서 `search.retry`만 바뀌었음을 확인했음. 엔진 파일은 바꾸지 않았음.
-- 최종 `python -X utf8 -I tools/run_tests.py --e2e E:\AI_mk2\venv-pw\Scripts\python.exe --timeout 1500`은 **232개 통과 / 실패 0개**(일반 212개·e2e 20개 묶음, 종료 코드 0). 종합 페이지 내부 71개도 모두 통과했고 실제 현재 시즌 3보스 검색·자동 난이도 및 확대 결과 직접 편성 연결을 포함함. 원문 표 대조 1건은 `COSMO_TABLES` 미설정으로 건너뜀. 별도 최신 표를 옛 시즌 1022 fixture 대조에 넣은 실행은 불일치했으며, 시작 커밋 빌더로도 같은 표의 season·bosses 불일치를 확인했음. 최신 시즌 생성물의 구조 대조는 위와 같이 통과했음. 로그는 `_tmp/search-retry-full.log`, 페이지 세부는 `local/shots/e2e-progress.log`임. 시뮬 목록·HTML 재생성, 관련 변이 22/22개 검출, 최종 문구 회귀도 통과했음.
+- 최종 `python -X utf8 -I tools/run_tests.py --e2e E:\AI_mk2\_env\venv-pw\Scripts\python.exe --timeout 1500`은 **232개 통과 / 실패 0개**(일반 212개·e2e 20개 묶음, 종료 코드 0). 종합 페이지 내부 71개도 모두 통과했고 실제 현재 시즌 3보스 검색·자동 난이도 및 확대 결과 직접 편성 연결을 포함함. 원문 표 대조 1건은 `COSMO_TABLES` 미설정으로 건너뜀. 별도 최신 표를 옛 시즌 1022 fixture 대조에 넣은 실행은 불일치했으며, 시작 커밋 빌더로도 같은 표의 season·bosses 불일치를 확인했음. 최신 시즌 생성물의 구조 대조는 위와 같이 통과했음. 로그는 `_tmp/search-retry-full.log`, 페이지 세부는 `local/shots/e2e-progress.log`임. 시뮬 목록·HTML 재생성, 관련 변이 22/22개 검출, 최종 문구 회귀도 통과했음.
 
 ## 2026-11-19 — 코스모 게이트 3팀 직접 편성 연결·자동 결과 요약 통일
 
@@ -960,7 +960,7 @@ quick 원시 표본이 없어 2워커로 2,323표본×40판을 생성하고 재�
 - 작업 시작 기준선은 209개 통과 / 1개 실패였음(`cleanup_test.py`의 기존 manifest 해시 불일치). `build_simpack.py` 재생성으로 해소했음. 새 연결 단위 시험은 상태·jobs·팀별 최종 능력치·캐시/취소·공유·자동 결과 이동을 검사하고 변이 11개를 검출함. 진입 허용/자산 대체 6개, 기존 순수 로직 11개·화면 24개를 포함해 관련 변이 52개를 검출했음. 새 e2e는 1440/390px 3팀 편성·중복·합계·그웬·자동 결과 가져오기와 실제 Pyodide 3보스의 양수 피해·점수 반환을 확인했음. 합성 계정만 사용했고 캡처·로그는 `_tmp/cosmo-direct/`에 두었음.
 - 전체 e2e에서 성장표 완료 콜백이 숨은 코스모 패널을 렌더해 기존 1팀의 전역 슬롯 검사에 8칸이 잡히는 문제를 발견했음. 비활성 패널은 비우고 비동기 완료에서도 렌더를 막았음. 기존 1팀 조작 e2e의 1280/360px 검사를 통과했으며 새 단위 변이와 모드 왕복 e2e를 추가했음. `b125b743..b1d8bf5` 독립 재리뷰에서 소유권·복귀 상태·그웬 재연결에 새 차단 결함 없음으로 확인했음.
 - 기존 공유 e2e의 변이 소스 문장을 `cd` 분기에 맞췄음(10개 그룹과 변이 통과). 자동 검색 e2e는 시작 커밋 `e9c617b`의 화면·검색 코드로도 후보 중복 실패가 재현됐음. 시험 전용 `keep=40`이 현재 시즌의 비중복 삼중을 잘라 내고, 예상 보스도 옛 벨그라스로 고정돼 있었음. 작은 시험 풀의 후보 조합은 유지하고 보스를 현재 시즌 목록과 대조하도록 수정했음. 실제 워커의 자동 난이도·3보스 검색은 모두 통과했음. 검색 알고리즘·엔진 변경 없음.
-- 최종 검증: `python -X utf8 -I tools/build_simpack.py`, `python -X utf8 -I build_party_html.py index.html` 통과. `python -X utf8 -I tools/run_tests.py --e2e E:\AI_mk2\venv-pw\Scripts\python.exe --timeout 1500`은 **231개 통과 / 실패 0개**(일반 211개·e2e 20개, 종료 코드 0). 종합 페이지 내부 70개도 모두 통과했고 `test_cosmo_auto_level`·`test_cosmo_search` 및 기존 1팀 시험 전체를 포함함. 관련 변이 52/52개 검출. `COSMO_TABLES` 미설정 원문 표 대조 1건은 건너뜀. 최종 로그는 `_tmp/cosmo-direct/completed-tests.log`, 종합 페이지 세부는 `local/shots/e2e-progress.log`임. 시험 보정 범위 `b1d8bf5..c1cce19` 독립 리뷰에서 차단할 검증 약화 없음으로 확인했음. 작은 풀 검색 e2e는 후보 절단 성능이 아닌 실제 검색 완주·화면 연결을 검사함.
+- 최종 검증: `python -X utf8 -I tools/build_simpack.py`, `python -X utf8 -I build_party_html.py index.html` 통과. `python -X utf8 -I tools/run_tests.py --e2e E:\AI_mk2\_env\venv-pw\Scripts\python.exe --timeout 1500`은 **231개 통과 / 실패 0개**(일반 211개·e2e 20개, 종료 코드 0). 종합 페이지 내부 70개도 모두 통과했고 `test_cosmo_auto_level`·`test_cosmo_search` 및 기존 1팀 시험 전체를 포함함. 관련 변이 52/52개 검출. `COSMO_TABLES` 미설정 원문 표 대조 1건은 건너뜀. 최종 로그는 `_tmp/cosmo-direct/completed-tests.log`, 종합 페이지 세부는 `local/shots/e2e-progress.log`임. 시험 보정 범위 `b1d8bf5..c1cce19` 독립 리뷰에서 차단할 검증 약화 없음으로 확인했음. 작은 풀 검색 e2e는 후보 절단 성능이 아닌 실제 검색 완주·화면 연결을 검사함.
 
 ## 2026-11-19 — 구원자 자동 대상 감사 «다름» 12 SE 교정
 
@@ -989,7 +989,7 @@ quick 원시 표본이 없어 2워커로 2,323표본×40판을 생성하고 재�
 - 승인 `v2_construction.png`·`v2_construction_512.png`를 `construction.png`·`construction_512.png`로 복사했음. 두 PNG는 승인 원본과 SHA-256이 일치함. 두 크기의 무손실 정지 WebP를 만들고 `GWEN_SCENES.construction`에 등록했음. 깜빡임 없음, 장식 이미지 `aria-hidden`, `Ux.gwenImage`의 정지 이미지 decode 실패 시 board 대체를 적용했음.
 - 새 DOM 시험은 코스모/작전/큐브/길드 전환·링크 복원 화면·시작 카드 재생성·진입 우회·접근성·그림 누락 대체를 검사함. 차단·속성·안내·편집 준비·fallback을 훼손하는 소스 사본 변이 9개를 모두 검출했음. 새 e2e 한 건은 1280/360px에서 실제 변경 이벤트 직후의 상태, 저장 초안 보존, 안내에서 자동 추천 이동, 카드 클릭 우회 차단, 그림 실패 대체를 확인했음. 캡처는 `local/cosmo-construction/`에 두었음.
 - 독립 리뷰는 커밋 금지 조건에 맞춰 `local/cosmo-construction-review/`의 고정 소스 사본으로 진행했으며 수정 필요 결함 없음으로 끝났음. 작업 전 실행한 기준선 명령은 205개 통과했으며, 직접 편성 관련 검사와 별도로 실행한 UX 검사는 코드 변경 전에 통과를 확인했음.
-- 최종 검증: `python -X utf8 -I build_party_html.py index.html` 통과. `python -X utf8 -I tools/run_tests.py --e2e E:\AI_mk2\venv-pw\Scripts\python.exe --timeout 1500`은 **224개 통과 / 1개 파일 실패**(종료 코드 1). 일반 시험 206개와 e2e 18개 파일이 통과했음. 실패한 `test_page.py` 안에서는 **68개 통과 / 알려진 2개 실패**(`test_cosmo_auto_level`·`test_cosmo_search`, 바스커빌 미지원 차단)이며 추가 실패 없음. `COSMO_TABLES` 미설정 표 대조 1건은 건너뜀. 로그는 `local/cosmo-construction-baseline.log`·`local/cosmo-construction-full.log`, 세부 e2e는 `local/shots/e2e-progress.log`임.
+- 최종 검증: `python -X utf8 -I build_party_html.py index.html` 통과. `python -X utf8 -I tools/run_tests.py --e2e E:\AI_mk2\_env\venv-pw\Scripts\python.exe --timeout 1500`은 **224개 통과 / 1개 파일 실패**(종료 코드 1). 일반 시험 206개와 e2e 18개 파일이 통과했음. 실패한 `test_page.py` 안에서는 **68개 통과 / 알려진 2개 실패**(`test_cosmo_auto_level`·`test_cosmo_search`, 바스커빌 미지원 차단)이며 추가 실패 없음. `COSMO_TABLES` 미설정 표 대조 1건은 건너뜀. 로그는 `local/cosmo-construction-baseline.log`·`local/cosmo-construction-full.log`, 세부 e2e는 `local/shots/e2e-progress.log`임.
 - 기존 작업 트리 변경을 보존했음. 엔진·`.omc/` 변경과 커밋·푸시 없음.
 
 ## 2026-11-19 — 자동 결과 그웬 하단 복원·후보 진행도·좁은 화면 보정
@@ -1261,7 +1261,7 @@ quick 원시 표본이 없어 2워커로 2,323표본×40판을 생성하고 재�
 - 결과 발표는 첫 파티의 선택된 shown.clear를 사용함. 0/.0499/.05/.6999/.7/1 경계·확률 없음·점수형·배열·선택 변경·재렌더를 검사했음. 1.8초는 decode가 끝난 뒤 실제 보이는 시간만 소비하고 결과별 한 번임. 오류는 호출부에서 calculation/few/empty/other 원인을 넘기며 취소·미계산·이미 최선은 실패가 아님. 독립 검토가 발견한 decode 전 발표 종료와 길드·코스모 후보 부족의 계산 실패 표현을 재현·수정하고 회귀 시험을 추가했음.
 - 새 그림 13종은 만들지 않았음. `ux_ui.js`의 `GWEN_SCENES` 한 표에서 file:null과 fallback으로 기존 그림을 사용함. 별도 그림 작업에서 파일이 준비되면 file·blink만 채움. 연결 표·동작 규약은 `tools/gwen_art/art2.md`가 정본임. 헤더 상주 연출·엔진(battlesim) 변경 없음.
 - 전체 시험에서 낡은 E2E 기대값 두 건을 확인했음. 기준 커밋 92d409e의 화면을 route로 제공해 같은 실패를 재현함: 불러오기 경고의 옛 문구, 이미 지원된 잠재력 11026을 미지원으로 기대한 시험임. 문구를 현재값으로 맞추고 후자는 시험 서버의 합성 자료에 해석 불가 효과를 넣어 실제 Pyodide 작업자→결과 카드의 미지원 이름 표시를 다시 검증했음. 엔진·배포 자료는 바꾸지 않았음.
-- index 재생성 뒤 `node tests/ux_ui_test.js`·`node tests/public_ui_test.js`와 전체 `python -X utf8 -I tools/run_tests.py --e2e <workspace>/venv-pw\Scripts\python.exe`를 통과했음. 최종 193개 시험 모듈 통과/실패 0(기본 187개+E2E 6개), 일반 화면 E2E 70개와 새 그웬 브라우저 검사 22개를 포함함. COSMO_TABLES가 없는 환경 검사 1건은 건너뛰었음. 로그는 `_tmp/final-tests.log`임.
+- index 재생성 뒤 `node tests/ux_ui_test.js`·`node tests/public_ui_test.js`와 전체 `python -X utf8 -I tools/run_tests.py --e2e <workspace>/_env/venv-pw\Scripts\python.exe`를 통과했음. 최종 193개 시험 모듈 통과/실패 0(기본 187개+E2E 6개), 일반 화면 E2E 70개와 새 그웬 브라우저 검사 22개를 포함함. COSMO_TABLES가 없는 환경 검사 1건은 건너뛰었음. 로그는 `_tmp/final-tests.log`임.
 - 요구한 되돌림 9종(순환·방치 복귀·토큰·숨김 정지·shown·확률 누락·접근성·고정 자리·decode 전 교체)을 모두 의도한 assertion에서 검출했음. 새 Node 4종·새 E2E 10종·기존 art2 7종의 전용 되돌림 검출 21건을 확인했음. 코드 원본을 바꾸지 않고 VM·route·시험 CSS로 결함을 주입했음. 후속 독립 검토에서도 추가 확정 결함 없음.
 - 1280/360px 상황별 캡처와 360/1280/1600px 지연 전후 캡처·측정 JSON은 `_tmp/gwen-ux/`, 12초 대기 영상은 `_tmp/gwen-ux/idle-12s.webm`임. 캡처·영상·임시 자료는 커밋에서 제외함. 남은 검증은 별도 새 그림의 실제 프레임·깜빡임 연결과 PM 관찰 환경의 네모 상자·재정렬 재확인임.
 ## 2026-11-16 그웬 이동·직접 편성용 그림 10종
@@ -1771,7 +1771,7 @@ codex 가 «클라와 다르다»고 지적한 16건(해제 8·면역 8)을 buil
 - 수정 전 전체 시험 141개 묶음 통과·실패 0, 환경 의존 검사 2건 건너뜀이었음. 43개 실측 샘플(패치 전 포함) 각 200판 및 지정 내 정보 eq1113 200판 전후 출력은 모두 동일했음. 계정 수치·원본 결과는 비공개 static-data `analysis/smallfix_1113/`에만 보관했음.
 - 고정 해시 시험은 새 규칙의 legacy 값으로 유지했음. 단위 시험 10개·결함 주입 7건을 통과했음. 메모리 제한에 맞춰 보정 도구에 `--workers 1` 순차 실행을 추가했으며, 최종 코드로 빠른 계산 표본 2,323건×40판을 재계산했음. `data/quick.json`은 기존과 동일했음. 길드 방어전 사전 계산은 시즌 종료 사유를 도장에 남겼음.
 - 독립 리뷰는 `b700ca3..9ec6326` 고정 범위로 순차 진행했음. HP 비율의 float32 변환 누락 지적을 `NKM:2191-2198,10480`으로 확인해 반영했음. 양방향 경계 시험·변환 제거 결함 주입을 추가하고 실측 회귀·보정을 다시 실행했음. `9ec6326..d750352` 재리뷰에서 차단 지적은 없었음.
-- 최종 `python -X utf8 -I tools/run_tests.py --rebuild --e2e <workspace>/venv-pw\Scripts\python.exe --timeout 3600`은 143개 묶음 통과·실패 0, 브라우저 내부 57개 통과였음. 환경상 건너뜀은 기준선과 같은 2건(COSMO_TABLES·옆 journeyhelper 없음)이었음. 시뮬·화면을 재생성했으며 시뮬·보정·독립 리뷰·시험은 순차 실행했음.
+- 최종 `python -X utf8 -I tools/run_tests.py --rebuild --e2e <workspace>/_env/venv-pw\Scripts\python.exe --timeout 3600`은 143개 묶음 통과·실패 0, 브라우저 내부 57개 통과였음. 환경상 건너뜀은 기준선과 같은 2건(COSMO_TABLES·옆 journeyhelper 없음)이었음. 시뮬·화면을 재생성했으며 시뮬·보정·독립 리뷰·시험은 순차 실행했음.
 
 ## 2026-11-13 대상 격파 사건·여러 대상 HP/약화 조건
 
@@ -1784,7 +1784,7 @@ codex 가 «클라와 다르다»고 지적한 16건(해제 8·면역 8)을 buil
 - 기존 P5 시험은 타격과 다른 `Ctx`에서 지속 브레이크를 참으로 기대해 새 규칙에서 실패했음(변경 전 기준선은 통과). 같은 시전의 실제 타격 기록으로 검사하고 다음 시전 거짓·강인도 없음 참·legacy 참을 별도로 확인하도록 수정했음.
 - 독립 리뷰는 `e2d0304..8eb7672` 고정 범위로 순차 진행했으며 새 결함·회귀 지적은 없었음. 기존 HP 실수 비교와 클라 정수 절삭 차이는 이번 범위와 분리했음. 피격 격파 기록을 채워도 현재 입력에 ‘이번 타격 격파’ 키 사용이 없어 legacy 추가 영향은 없음을 확인했음.
 - 빠른 계산 표본 2,323건×40판을 단일 프로세스로 재계산하고 보정했음. `data/quick.json`은 기존과 동일했음. 길드 방어전 사전 계산은 시즌 종료 사유를 도장에 남기고 다음 시즌 자료 반영 때 재생성하기로 함.
-- 최종 `python -X utf8 -I tools/run_tests.py --rebuild --e2e <workspace>/venv-pw\Scripts\python.exe --timeout 3600`은 142개 묶음 통과·실패 0, 브라우저 내부 57개 통과였음. 환경상 건너뜀은 기준선과 같은 2건(COSMO_TABLES·옆 journeyhelper 없음)이었음. 시뮬·보정·독립 리뷰·시험은 순차 실행했음. 시뮬 묶음을 갱신했고 `index.html`은 재생성 결과 동일했음.
+- 최종 `python -X utf8 -I tools/run_tests.py --rebuild --e2e <workspace>/_env/venv-pw\Scripts\python.exe --timeout 3600`은 142개 묶음 통과·실패 0, 브라우저 내부 57개 통과였음. 환경상 건너뜀은 기준선과 같은 2건(COSMO_TABLES·옆 journeyhelper 없음)이었음. 시뮬·보정·독립 리뷰·시험은 순차 실행했음. 시뮬 묶음을 갱신했고 `index.html`은 재생성 결과 동일했음.
 
 ## 2026-11-13 시전자 보유 목록·길레 특수기 승급
 
@@ -1795,7 +1795,7 @@ codex 가 «클라와 다르다»고 지적한 16건(해제 8·면역 8)을 buil
 - `ingame_check.py`의 내 정보 없는 43개 샘플(패치 전 포함)과 지정 내 정보의 `eq1113`·`clo450`은 각 200판 전후 출력이 모두 동일했음. 계정 결과·추적 원본은 비공개 static-data `samples/chainfix-gille/`에만 보관했음.
 - 빠른 계산 표본 2,323건×40판을 단일 프로세스로 다시 계산하고 보정했음. `data/quick.json`은 기존 파일과 동일했음. 길방 사전 계산은 시즌 종료로 보류한 사유를 도장에 남겼고 다음 시즌 재생성하기로 함.
 - 독립 리뷰는 시작점 `6cbe559`와 고정 스냅숏 간 커밋 범위로 순차 진행했음. 효과 인스턴스 개수와 레벨 중첩수를 구분해야 한다는 지적을 `NKM.Templets:42625-42638,43200-43220,43318-43336`으로 확인해 반영했음. 새 후속 판정은 정확한 `중첩수` 조건으로 한정하고 다른 개수 비교는 기존 경로를 유지했음. 현재 공개 데이터에 해당 복합 조건 사용은 없으며 합성 시험으로만 경계를 검사함. 그 밖의 차단 지적은 없었음.
-- 최종 `python -X utf8 -I tools/run_tests.py --rebuild --e2e <workspace>/venv-pw\Scripts\python.exe --timeout 3600`은 141개 묶음 통과·실패 0이었음(e2e 57항목 통과). 환경상 건너뜀은 기준선과 같은 2건(COSMO_TABLES·옆 journeyhelper 없음). 리뷰 반영 뒤 단위 시험 8개·결함 주입 4건도 다시 통과했음. 시뮬·보정·리뷰·시험은 순차 실행했으며 index.html은 재생성 결과가 기존과 같았음.
+- 최종 `python -X utf8 -I tools/run_tests.py --rebuild --e2e <workspace>/_env/venv-pw\Scripts\python.exe --timeout 3600`은 141개 묶음 통과·실패 0이었음(e2e 57항목 통과). 환경상 건너뜀은 기준선과 같은 2건(COSMO_TABLES·옆 journeyhelper 없음). 리뷰 반영 뒤 단위 시험 8개·결함 주입 4건도 다시 통과했음. 시뮬·보정·리뷰·시험은 순차 실행했으며 index.html은 재생성 결과가 기존과 같았음.
 
 ## 2026-11-13 능력치 고정 연쇄·대상 집합 강인도 판정
 
@@ -1807,7 +1807,7 @@ codex 가 «클라와 다르다»고 지적한 16건(해제 8·면역 8)을 buil
 - 기존 `p5_test.py`의 가짜 격파 상태(`broken=True`인데 강인도 1)를 강인도 0으로 맞췄음. 실제 판정은 클라의 현재 강인도를 따르게 유지했음.
 - 빠른 계산 표본 2,323건×40판을 단일 프로세스로 다시 계산하고 보정했음. `data/quick.json`은 기존 파일과 동일했음. 길방 사전 계산은 시즌 종료로 보류한 사유를 도장에 남겼고 다음 시즌 재생성하기로 함.
 - 독립 리뷰는 시작점 `9c19322`와 고정 스냅숏 간 커밋 범위로 진행했음. 브레이크 상태가 아닌 적 문구에 빈 `not_has` 필터가 붙는 지적을 반영했음. 기본 매핑에는 영향이 없었으나 매핑이 없는 경로에서 전원이 격파됐을 때 대상을 다시 선택하던 문제였음. 전원 격파·일부 격파 시험과 결함 주입으로 확인했음. 그 밖의 차단 지적은 없었음.
-- 최종 `tools/run_tests.py --rebuild --e2e <workspace>/venv-pw\Scripts\python.exe --timeout 3600`은 140개 묶음 통과·실패 0이었음(e2e 57항목 통과). 환경상 건너뜀은 기존과 같은 2건(COSMO_TABLES·옆 journeyhelper 없음). 새 단위 시험 10개·결함 주입 5건을 별도로 확인했고, 시뮬·시험·독립 리뷰는 순차 실행했음. 웹 묶음을 갱신했고 index.html은 재생성 결과가 기존과 같았음.
+- 최종 `tools/run_tests.py --rebuild --e2e <workspace>/_env/venv-pw\Scripts\python.exe --timeout 3600`은 140개 묶음 통과·실패 0이었음(e2e 57항목 통과). 환경상 건너뜀은 기존과 같은 2건(COSMO_TABLES·옆 journeyhelper 없음). 새 단위 시험 10개·결함 주입 5건을 별도로 확인했고, 시뮬·시험·독립 리뷰는 순차 실행했음. 웹 묶음을 갱신했고 index.html은 재생성 결과가 기존과 같았음.
 
 ## 2026-11-13 화면 미사용 코드·숫자 포맷 정리
 
@@ -1816,7 +1816,7 @@ codex 가 «클라와 다르다»고 지적한 16건(해제 8·면역 8)을 buil
 - 시험이 직접 호출하는 `savedTime`·`growthPriority`와 기존 슬롯 교환 추천은 유지했음. 빌더의 버프 이름·스킬 표 읽기는 용도·입력·오류 처리가 달라 전체 산출물 동일성 확인 없이 합치지 않기로 했음. 엔진·HANDOFF는 수정하지 않았음.
 - 변경 전 기준선 138개 통과·실패 0이었음. 기존 커밋 `613f06d`와 숫자 경계값·길방·코스모 HTML 반환값을 총 80,086회 비교해 바이트 동일을 확인했음(숫자 입력 반복 포함). 비교 도구·중간 결과는 `local/dedup/`에만 뒀음.
 - 공용 모듈을 읽도록 길방 변형 시험의 VM 로더에 실제 모듈 경로 기준 `require`를 연결했음. 브레이크 옵션 누락·4단계 재정렬 누락 변형을 각각 실패로 검출하는 것을 다시 확인했음.
-- 독립 리뷰에서 차단할 회귀 없었음. `STARSAVIOR_STATIC` 지정 `tools/run_tests.py --rebuild --e2e <workspace>/venv-pw\Scripts\python.exe --timeout 3600`은 139개 통과·실패 0(e2e 내부 57개 통과), 환경 자료 부재 2건 건너뜀이었음. 재빌드 뒤 `data/`·`sim/` 44개 파일의 SHA-256이 변경 전과 같았고 `index.html`은 5,260바이트 줄었음.
+- 독립 리뷰에서 차단할 회귀 없었음. `STARSAVIOR_STATIC` 지정 `tools/run_tests.py --rebuild --e2e <workspace>/_env/venv-pw\Scripts\python.exe --timeout 3600`은 139개 통과·실패 0(e2e 내부 57개 통과), 환경 자료 부재 2건 건너뜀이었음. 재빌드 뒤 `data/`·`sim/` 44개 파일의 SHA-256이 변경 전과 같았고 `index.html`은 5,260바이트 줄었음.
 
 ## (HANDOFF 에서 옮김 2026-11-13 — HANDOFF 를 «지금 사실» 스냅숏으로 바꾸며 옛 «현재 상태» 줄과 날짜별 절을 원문 그대로 옮김)
 
@@ -1839,7 +1839,7 @@ codex 가 «클라와 다르다»고 지적한 16건(해제 8·면역 8)을 buil
 - 11/12 저녁: **11/12 게임 패치 대응(데이터북 기준 1차)** — 신규 구원자 길레·편애의 마녀 아세라(57→59명, 기존 아세라와 키 분리), 세레스·오르트로스 문구(미지원 줄 27→2), `ally_break_gauge=keep`(클라 기준, legacy skip), `own_turn_condition=client`(세레스 자기 턴 추가 발동, 모든 «내 턴» 줄에 적용 — 시험은 세레스 1건뿐, 비교 78건 결과 차이 없음), 빠른 계산 재보정(calib.acc 0.910→0.922, 표본 구성 달라 직접 비교 아님). 길방 시뮬표는 시즌4 종료(미오픈)로 재생성 생략 — **새 시즌 자료 반영 때 재생성**. NOA 피해 증감 규칙: 합산·방어 별도·연쇄 제외는 일치, «감소 최대 50%»를 자르는 위치만 공지와 클라 코드가 달라 재추출 후 확인. 가이드 DB 는 신규 2명 티어·추천 세팅 미정이라 유지. 상세 `docs/patch_1112.md`. **게임 PC 할 일**(재추출·디컴파일·신규 장비 ID·격전 의뢰·코스모 시즌 기간)은 static-data `SIM_HANDOFF.md` 맨 위. 리뷰(Claude 보조 계정) blocking 0, 비차단: 잠재력 40405 의 client 기대값 시험 없음, «X 지속 턴 +N» 파서가 약화에만 적용.
 - 11/12 낮: 비차단 정리 — 미오픈 시즌 기록은 키울 만한 구원자 순위에서 제외(저장 유지), 시즌 종료 시 육성 탐색 중단은 기존 연결(simInvalidate→growthCancel)을 시험으로 고정. 코스모 9 이상 «검증 안 됨» 표시는 하지 않기로 함(사용자: 기존 계산 신뢰, 이슈 생기면 조정). 구조 변경이 필요한 미확인 규칙 5종 읽기 전용 점검 완료(남은 일 19·21 아래). (완료: 11/12 패치 작업에서 `ally_break_gauge=keep` 전환, legacy=`skip`.)
 - 11/12 오전: ① (같은 날 제거 — 사용자: 슬롯 끼워넣기는 유저가 할 일, 보조 추천엔 «스타링크» 부족 항목 칩만. 기존 스타링크 슬롯 교환 추천은 유지) ② 키울 만한 구원자 순위 복원(«보조 추천에 키워야 함으로 나온 콘텐츠 종류 수» → 같은 콘텐츠 안 개선폭, 내 정보 육성 설정 아래), ③ 시즌 종료 콘텐츠 «미오픈»(길방·코스모만, 시작 전·종료 후 탐색·육성 경로 차단, 검증 우회 `?dev=1`·`?season=force`, 공유 링크에는 안 묻음). 길방 시즌4는 종료라 지금 «미오픈». **코스모 시즌 날짜는 비공개 표에서 못 찾아 `season.start/end=null`(기간 미확인, 열어 둠)** — 게임 PC 에서 INTERVAL 표 위치 확인 필요. 구현 codex, 리뷰 Claude 보조 계정(blocking 0).
-- 11/11 심야: 육성 가이드를 «다 키운 계정» 방식으로 바꿨음(사용자 확정). 옵션(«추천 편성 보기» 옆 체크)을 켜면 지금 계정 추천을 맨 위에 그대로 두고, 덜 키운 캐릭터를 목표 상태(스타링크 가상 슬롯·프리셋 +15 장비·스킬/공명 최대·여정/잠재력, 이미 높은 항목은 유지, 장비는 유닛 단위로 원래/프리셋 중 높은 쪽)로 덮어쓴 계정으로 같은 탐색을 한 번 더 돌려 확률(점수)이 더 높을 때만 하단에 «키우면» 카드(키워야 함·부족 항목 칩·미보유 구분). 작전·회랑·길방·코스모. 1명 고정 재조합·항목별 비교·차이 구간은 제거, 키울 만한 구원자 순위는 숨김. 아카라이브 11/11 패치 공지 게시 완료(원고 `<workspace>/아카라이브-파티네비게이터\`).
+- 11/11 심야: 육성 가이드를 «다 키운 계정» 방식으로 바꿨음(사용자 확정). 옵션(«추천 편성 보기» 옆 체크)을 켜면 지금 계정 추천을 맨 위에 그대로 두고, 덜 키운 캐릭터를 목표 상태(스타링크 가상 슬롯·프리셋 +15 장비·스킬/공명 최대·여정/잠재력, 이미 높은 항목은 유지, 장비는 유닛 단위로 원래/프리셋 중 높은 쪽)로 덮어쓴 계정으로 같은 탐색을 한 번 더 돌려 확률(점수)이 더 높을 때만 하단에 «키우면» 카드(키워야 함·부족 항목 칩·미보유 구분). 작전·회랑·길방·코스모. 1명 고정 재조합·항목별 비교·차이 구간은 제거, 키울 만한 구원자 순위는 숨김. 아카라이브 11/11 패치 공지 게시 완료(원고 `<workspace>/_records/아카라이브-공지\`).
 - 11/11 밤: 육성 가이드 2단계(길방)·3단계(코스모)를 구현했음(설계 `docs/growth_guide_stage23_equip_design.md`, 구현 기록은 그 문서 맨 아래). 구현 codex, 독립 리뷰·재리뷰 Claude 보조 계정(Opus). 엔진 결과 불변. 장비 재분배(C)는 아직 구현 전.
 - 11/11 작업 PC 저녁: 클라 규칙 6건 기본 전환(`dot_hot_order=hot_first`, `dot_hot_lifetime=tick`, `ally_cd_tick=turn_end`, `stat_select_int=floor`, `break_domain_category=marker`, `ally_turn_self=condition`)과 선택지 2건(`fixed_true_formula`·`counter_slot_timing`, 기본 legacy)을 넣었음. 규칙은 판당 수십~수백 회 작동하지만 현재 표준 결과는 바뀌지 않았음(아래 절). 엔진 가속 2차로 1차 대비 약 1.1배 더 빨라졌음(결과 동일). 상세 «11/11 작업 PC 저녁» 절.
 - 11/11 작업 PC 오후: 엔진 가속 ①단계(순수 Python 최적화) 1차를 넣었음 — 결과 비트 단위 동일, 코스모 벤치 약 1.2배. 상세 아래 «11/11 작업 PC 오후» 절.
@@ -1888,7 +1888,7 @@ codex 가 «클라와 다르다»고 지적한 16건(해제 8·면역 8)을 buil
 
 - 프로파일(코스모 벨그라스 340판, 10.2초)은 한 곳에 몰리지 않고 고르게 퍼져 있었음: dict.get 246만 회, `mods` 30만 회, `lines_of` 32만·`kind_lines` 24만 회 등.
 - 바꾼 것(`battlesim/mc.py`): `kind_lines` 를 유닛별 시점 색인 캐시로(정의 객체·`d.lines` 참조·길이가 바뀌면 다시 만듦 — `lines_of` 의 기존 캐시와 같은 무효화 조건), 맞은 아군·맞기 전 아군 줄도 이 색인 사용, `line_rest`·`paren_after_name` 문자열 캐시(4,096개 제한, 전투 상태 저장 없음), `mods` 초기값 사전 복사, `run_batch` 빈 묶음 조기 반환·`hit_stack_order` 아닐 때 집계 생략, `_per_target` 조건 판정 순서(부작용 없는 검사), `add_effect` 의 `_is_any_turn` 중복 호출 제거, 반복 import 제거.
-- 동일성: `tools/bench_cosmo_speed.py` sha256 `d8a8dccd…` 유지. 저장소 밖 `<workspace>/accel-golden\golden.py`(13개 콘텐츠·편성 3개·기본/전체 legacy 규칙 78건, timeline 포함 20판 해시)가 기준 `base.json` 과 파일 전체 동일. 같은 코드로 두 번 돌려 재현 동일함도 먼저 확인했음. 다음 최적화에도 이 도구로 전후 비교함.
+- 동일성: `tools/bench_cosmo_speed.py` sha256 `d8a8dccd…` 유지. 저장소 밖 `<workspace>/_work/accel-golden\golden.py`(13개 콘텐츠·편성 3개·기본/전체 legacy 규칙 78건, timeline 포함 20판 해시)가 기준 `base.json` 과 파일 전체 동일. 같은 코드로 두 번 돌려 재현 동일함도 먼저 확인했음. 다음 최적화에도 이 도구로 전후 비교함.
 - 속도: codex 교차 측정(원본·최종본 번갈아 3회씩) 평균 3.91→3.16초(약 1.24배). 메인 재측정은 2.61·3.29초로 측정 잡음이 커서 배수는 «약 1.2배»로만 기록함. 브라우저(Pyodide) 전후 시간은 미측정.
 - 시험: `tests/accel_test.py` 9개(색인 무효화·판/유닛 격리·합산 순서), 결함 주입 6건 검출(codex 보고). 전체 `run_tests.py --rebuild --e2e` **115 통과/0 실패**, 건너뜀 2건 종전과 같음. 메인(Claude) 코드 검토: `e.clock = clock` 은 새 효과 생성 분기 안이라 기존 동작과 같음, `_per_target`·`run_batch` 재배치는 부작용 없는 검사라 같음 — 반영.
 - 시도 후 철회: `Ctx` 생성 생략(사건 호출 관찰 시험이 깨짐).
@@ -1900,7 +1900,7 @@ codex 가 «클라와 다르다»고 지적한 16건(해제 8·면역 8)을 buil
 - **기본 client 유지 이유**: ① 길방 단계 배율(DIFFICULTY_LEVEL_GROUP ScaleFactor, 9단계 공격 +120%)이 들어가는 단을 클라에서 못 찾았음(Star.Templets:13228-13230 은 UI 표시에만 쓰임, codex 조사). AddStat 과 같은 1단 합이면 9단계 보스 공격력 34,425, 지금처럼 미리 곱이면 30,855(약 10% 차이). ② 11/05 영상 대조는 client 방향과 맞았고 bake(≈stage)는 9·10단계를 낙관했음. stage(느린 보스)와 ScaleFactor 1단 합(센 보스)이 같이 맞을 수 있어 한쪽만 바꾸지 않음. → 남은 일 4.
 - 일반 유닛 전역 곱 전환은 보류(남은 일 4). codex 설계 상담: 아군 `d.stats` 는 장비 포함(parser.py:320, stats.py:64), 내 정보는 패시브까지 포함 후 `stats_final` 이 제거(myinfo_stats.py:284), `d.passive` 에 등장 시 local 효과도 들어감(mc.py:3631), HP 는 이미 일부 곱 구조(mc.py:538·860) — 매핑 확정 전에 기본 전환하면 미확인을 확정하게 됨.
 - 시험: `guild_bfb_test.test_boss_nv_sum` 을 세 모드·0/7/8/9단계·3단 버프 곱/합 비교로 바꿈. stage 분기를 끄면 실패함을 확인. 기본값 결과 불변이라 `guild_sim`·`quick` 재생성 없음(codex 리뷰가 client/bake 2모드×5단계×3판 API 결과·타임라인 일치 확인). 리뷰 blocking 0, 비차단 1건(대상 선정 `live_atk` 가 stage 미반영) 반영.
-- 환경: 작업 PC 에 사용자 환경변수 `STARSAVIOR_STATIC=<workspace>/starsavior-static-data` 를 지정했음 — 비공개 표 대조 시험 9건이 건너뛰지 않고 돎. `COSMO_TABLES` 는 원본 추출 폴더(`hard/` 하위 구조) 기준이라 static-data `tables/` 로는 안 됨(건너뜀 유지). `STARSAVIOR_STATIC` 지정 상태로 `run_tests.py --rebuild --e2e <workspace>/venv-pw\Scripts\python.exe` **114 통과/0 실패**(브라우저 시험 포함), 건너뜀 2건(COSMO_TABLES·옆 journeyhelper)은 종전과 같음.
+- 환경: 작업 PC 에 사용자 환경변수 `STARSAVIOR_STATIC=<workspace>/starsavior-static-data` 를 지정했음 — 비공개 표 대조 시험 9건이 건너뛰지 않고 돎. `COSMO_TABLES` 는 원본 추출 폴더(`hard/` 하위 구조) 기준이라 static-data `tables/` 로는 안 됨(건너뜀 유지). `STARSAVIOR_STATIC` 지정 상태로 `run_tests.py --rebuild --e2e <workspace>/_env/venv-pw\Scripts\python.exe` **114 통과/0 실패**(브라우저 시험 포함), 건너뜀 2건(COSMO_TABLES·옆 journeyhelper)은 종전과 같음.
 
 ## ▶ 2026-11-11 (Claude) — 최신 코드 기준 실제 플레이 재대조 (푸시 완료, 코드 변경 없음)
 
@@ -1941,7 +1941,7 @@ codex 가 «클라와 다르다»고 지적한 16건(해제 8·면역 8)을 buil
 - **추출 도구 완료**: `starsavior-myinfo` main `ff7b9ef`, `starsavior-packet-ref` main `d33f754`로 로컬 커밋했음. C#·두 PowerShell 배포본·Python의 일반/빈 목록/null 혼합/전부 null 합성 ACK 출력이 일치함. null 방어를 제거하면 정상 2사례 뒤 null 사례에서 실패하고 복구 후 통과함. 신원은 QooReche/noreply, push하지 않았음.
 - **회귀 검증**: 코드 blocking 3종과 조건 혼합/슬롯 수 초과/레벨 0 거부를 메모리 변이로 재주입해 실패를 확인했음. 브라우저는 모바일 라벨 높이·카드 하단 정보와 비겹침·이름 한 줄·상위 5명·슬롯 위치·맨 위 결론·WCAG 대비를 검사하고 B1/B2/B3/B6 결함 주입을 각각 잡았음. 가이드 재렌더 뒤 슬롯 버튼 노드/리스너 유지도 확인함. 추가 8명 계정의 옛 형식 전환 시험은 시뮬 완료 전에 30초 칩 대기로 실패했으며 완료 대기를 추가한 뒤 실제 작업자 슬롯 시험이 통과했음. 시뮬 판 수·탐색 상한·제품 시간 제한은 그대로임.
 - **최종 시험 검토**: `b0a2a7f..cbb70df`의 호환 기록 유지/제외 시험·권고 변이 검사·슬롯 화면 완료 대기를 독립 재검토했고 추가 지적 없음. 기준선은 일반 109 통과/0 실패였음. 골든 기대값·엔진 규칙은 바꾸지 않았고 `--write`는 쓰지 않았음.
-- **최종 실행**: static-data 지정 `tools/run_tests.py --rebuild --e2e <workspace>/venv-pw\Scripts\python.exe --timeout 1800`에서 브라우저 44건은 모두 통과했음(`%TEMP%/pn-review-final.log`). 일반 시험 한 건이 옛 레벨 0 거부 기대값으로 실패해 `myinfo_level_test.js`를 0 수입 허용·대체 레벨·누락 진단 검증으로 고쳤음. 두 0 거부 결함을 다시 주입하면 각각 실패함을 확인했으며, 같은 제품 코드로 `--rebuild` 일반 전체를 재실행해 **110 통과/0 실패**했음(`%TEMP%/pn-review-general-final.log`). 브라우저 제품/시험 코드는 앞서 통과한 실행과 같음. 환경 건너뜀은 기존 COSMO_TABLES·journeyhelper 2건임.
+- **최종 실행**: static-data 지정 `tools/run_tests.py --rebuild --e2e <workspace>/_env/venv-pw\Scripts\python.exe --timeout 1800`에서 브라우저 44건은 모두 통과했음(`%TEMP%/pn-review-final.log`). 일반 시험 한 건이 옛 레벨 0 거부 기대값으로 실패해 `myinfo_level_test.js`를 0 수입 허용·대체 레벨·누락 진단 검증으로 고쳤음. 두 0 거부 결함을 다시 주입하면 각각 실패함을 확인했으며, 같은 제품 코드로 `--rebuild` 일반 전체를 재실행해 **110 통과/0 실패**했음(`%TEMP%/pn-review-general-final.log`). 브라우저 제품/시험 코드는 앞서 통과한 실행과 같음. 환경 건너뜀은 기존 COSMO_TABLES·journeyhelper 2건임.
 - **재캡처**: 요청한 scratch `pn/shots/capture.py`를 `pn/shots2/capture.py`로 재사용해 기존 18상태와 옛 형식 육성 가이드 1장, 합계 19장을 저장했음. `capture_manifest.json`에 전체 파일명·상태·크기·대비 검사를 남김. 4조합(1366/390 × light 속성/dark 속성) 모두 가로 넘침·깨진 이미지 0, 캡처 오류 0임. 접힌 모바일 전체 높이는 10,839→3,897px, 데스크톱은 5,899→3,580px임. 05 펼침 캡처는 나머지 명단도 열어 실제 보유 구원자의 항목별 기여를 표시함. 실계정 자료는 쓰지 않았음.
 
 ### 이전 구현 기록
@@ -1983,7 +1983,7 @@ codex 가 «클라와 다르다»고 지적한 16건(해제 8·면역 8)을 buil
 - **길방 판정**: `git show`로 `39e03f4`·`a24d4d9`·`8537350`의 무영향 인정과 이유 이력을 확인했음. 이번에는 기존 후보 5팀이 그대로여도 영향이 있음. 저장 표 첫 팀(세레스 할로윈·웨딩 에핀델·바니 샤를·크리스텔), 표준 육성 ×1.5·6단계·지원 none·선택 off·seed 7·각 20판에서 legacy→병합 기본값 클리어 0.05→0.00, 진행도 0.7416→0.7368, 판별 보스 깎음 평균 0.4833→0.4736. 스위치 하나씩 비교해 `turn_unit_debuff_cond`만 전환해도 같은 차이를 확인했음. 따라서 도장만 인정하지 않고 기존 설정 전체 **234,000판을 재계산했음**(1,028초). 각 1,950칸 중 클리어율 변화 off 359칸·max 423칸, 평균 진행도 변화 off 1,160칸·max 1,515칸. off 최고 단계는 그대로(육성 ×1/×1.5/×2/×2.5/×3 = 0/6/8/8/9), max는 ×2 6→4·×2.5 7→6이며 나머지는 유지했음. 팀·지원·육성·seed·판 수는 이전과 같음.
 - **재생성**: `build_simpack.py` → `gen_quick_calib.py --per-content 400 --opboss` → `calibrate_quick.py --write` → HTML 순으로 완료했음. quick 2,323표본×40판(92,920판), 전체 일치 **0.909**(이전 0.919, -0.010). 보정 뒤 그룹 일치 base 0.885·cosmo 0.963·rush 0.945. quick의 기본 계수·보정 통계만 바뀌었고 콘텐츠별 계수·스테이지 보정값은 동일했음. 길방 완료 뒤 `--rebuild`와 같은 simpack·HTML 빌더를 다시 실행했음. simpack 45파일·6,087,219바이트·`f24c4f44c50d`, HTML 2,083,862바이트. quick/guild_sim 규칙 도장은 모두 `ab0c0aa44391ff86`이며 생성기가 직접 갱신했음.
 - **기준선**: `STARSAVIOR_STATIC=<workspace>/starsavior-static-data`, 전체 96 통과/2 실패. 실패는 simpack manifest·quick/guild_sim 도장뿐이었음. `COSMO_TABLES`·옆 journeyhelper 없음으로 2건 건너뜀. 골든 `--write`·계정 자료는 쓰지 않았음.
-- **최종 검증**: 같은 `STARSAVIOR_STATIC`으로 `python -X utf8 -I tools/run_tests.py` **98 통과/0 실패**, `python -X utf8 -I tools/run_tests.py --e2e <workspace>/venv-pw\Scripts\python.exe` **99 통과/0 실패**(e2e 파일을 1건으로 센 수, 브라우저 38개 모두 통과). 기준선의 두 실패는 재생성으로 해소했으며 환경 건너뜀 2건은 같음. HTML의 데이터 밖 내용은 동일하고 데이터 변경은 `guild.sim`뿐임. 11/03·11/02의 오래된 절은 원문 그대로 `docs/HISTORY.md`로 옮겼음. 로컬 QooReche/noreply 신원을 유지해 생성물·문서를 한 커밋으로 묶으며 푸시는 하지 않음.
+- **최종 검증**: 같은 `STARSAVIOR_STATIC`으로 `python -X utf8 -I tools/run_tests.py` **98 통과/0 실패**, `python -X utf8 -I tools/run_tests.py --e2e <workspace>/_env/venv-pw\Scripts\python.exe` **99 통과/0 실패**(e2e 파일을 1건으로 센 수, 브라우저 38개 모두 통과). 기준선의 두 실패는 재생성으로 해소했으며 환경 건너뜀 2건은 같음. HTML의 데이터 밖 내용은 동일하고 데이터 변경은 `guild.sim`뿐임. 11/03·11/02의 오래된 절은 원문 그대로 `docs/HISTORY.md`로 옮겼음. 로컬 QooReche/noreply 신원을 유지해 생성물·문서를 한 커밋으로 묶으며 푸시는 하지 않음.
 
 ## ▶ 2026-11-10 (Claude) — 새 빌드 확인·표 재추출·벨그라스 조사·외부 문서 대조 (푸시 완료)
 
@@ -2146,7 +2146,7 @@ ew-extract`·시즌 1022·빌드 26429597 로 임시 출력과 `data/cosmo_raid.
 - ③ 1단계 순차 반감(`pickPass`·`mergeSummary`·`passCount`): 전 조합 1판 → 보스별 상위 10%(경계 동점 포함, 구원자별 상위 대안 포함, 최소 3×keep 팀)만 1판 더 → 2판 평균으로 기존 2단계. ETA 단계 4개로 확장(옛 저장 속도는 버림).
 - 측정·예상 시간·남은 일은 `docs/cosmo_raid.md` 「전수 탐색 가속」 절. 미검증: 실제 브라우저(Pyodide) 워커 메모리, 24코어 이상에서의 실측 확장, 사용자 PC 시간.
 - 클라 코드 추적 결론(근거는 코스모 절): 최종 점수·3보스 합산·순위·도전 횟수·시즌 날짜는 서버. 클라 HUD 식은 `Base+MaxDamage×(깎은비율 1/10000 내림)`을 정수 내림. 고정 레벨 200·공명 10과 스타링크 가산 없음은 시뮬이 이미 반영(`fixed200`), 서버 동작은 미확인. 시즌 버프(BCT_*)의 전투 적용 코드는 클라에서 못 찾음.
-- 11/08 확인: `run_tests.py --rebuild --e2e <workspace>/venv-pw\Scripts\python.exe` **85 통과/0 실패**(e2e 포함, 11/06에 실패하던 `mergeSummary` 시험도 통과). e2e `test_cosmo_search`는 작업자 수 자동·ETA 4단계 저장을 검사하도록 고쳐져 있음. 40명 전수 실측과 ETA 오차는 아직 안 쟀음.
+- 11/08 확인: `run_tests.py --rebuild --e2e <workspace>/_env/venv-pw\Scripts\python.exe` **85 통과/0 실패**(e2e 포함, 11/06에 실패하던 `mergeSummary` 시험도 통과). e2e `test_cosmo_search`는 작업자 수 자동·ETA 4단계 저장을 검사하도록 고쳐져 있음. 40명 전수 실측과 ETA 오차는 아직 안 쟀음.
 - 다음: 사용자가 추천 편성으로 직접 뛰고 영상(편성 화면·결과 화면의 점수·남은 턴·생존 수·레벨)으로 점수식 대조. 한국 커뮤니티 조사는 사용자가 보류함(Chrome 확장 연결 안 됨).
 
 ## ▶ 2026-11-06 (Claude) — 코스모 게이트 2단계: 3보스 겹침 금지 편성 찾기+최소 화면 (푸시 완료)
@@ -2169,7 +2169,7 @@ ew-extract`·시즌 1022·빌드 26429597 로 임시 출력과 `data/cosmo_raid.
 - 근거: 표 `BATTLE_TEMPLET_NORMAL`의 `BattleMissionData`에 `BMT_LIMIT_TURN` 65·60이 탐사(EXPLORE) 60개 스테이지에 걸려 있음(큐브·이벤트·일일은 각각 65/60·50/45). 클라 `NKC` 미션 판정은 `턴 > 한도`면 실패(NKC:590576-590598), 영상 샘플 결과 화면 «TURN 52 (52/60)»과 같은 단위 → 엔진 `turn_limit_unit=actions`(전역 행동 수, `ttk_actions`)와 일치. 클라 카운터가 전역 턴과 같은지는 코드로 끝까지 추적하지 않았고 영상 샘플로만 확인.
 - 구현: `api.simulate`에 옵션 `star_turns`(N) → 결과 `star_turn{limit,p}`(outcome 밖, 해시 시험 영향 없음). `web.run_auto`가 `t60`으로 전달. 화면은 `STAR_TURNS={equip:60}`일 때 옵션을 넣고, 순위(`scrCmp`·표시 순서·브레이크 비교)를 «60턴 내 비율 → 클리어율 → 진행도 → 턴» 순으로 가르며 칩에 «60턴 내 N%»를 붙임. 시험 `tests/star_turn_test.py`(한도 1·무한·중앙값·outcome 불변, 비교 방향을 뒤집으면 실패하는 것 확인).
 - 옵션 «장비 탐사 목표»(60턴 안에 클리어 / 클리어만, 기본 60턴, 장비 탐사에서만 표시·`pn.goal` 저장): 60턴 기준이면 카드에 «3별(소탕) 조건 60턴 이내 승리 가능성 기준, 턴 수는 시뮬 추정» 안내를 붙이고, «클리어만»이면 옵션을 시뮬에 안 넘겨 기존 순위로 돌아감. e2e `test_equip_goal_option` 추가.
-- 시험: `run_tests.py --rebuild --e2e <workspace>/venv-pw\Scripts\python.exe` **81 통과(e2e 36개 포함)/0 실패**. 중간에 `breakMetric`에 `t60: null`이 항상 붙어 JS 단위 시험이 깨졌고 값이 있을 때만 붙도록 고침.
+- 시험: `run_tests.py --rebuild --e2e <workspace>/_env/venv-pw\Scripts\python.exe` **81 통과(e2e 36개 포함)/0 실패**. 중간에 `breakMetric`에 `t60: null`이 항상 붙어 JS 단위 시험이 깨졌고 값이 있을 때만 붙도록 고침.
 - 미검증: 순위 변화가 사용자 체감과 맞는지. (실제 장비 탐사 영상 1판으로 60턴 판정 대조는 완료 — 아래 항목)
 - 아카라이브 글 원고(11/05, 간략판): `AI\partynavigator\release\arca_post\arca_post_20261105.txt`(저장소 밖, 제목·올리는 방법·본문 HTML). 상단 공지 배너는 아직 «11/03 업데이트» 문구(필요하면 11/05로 갱신 후 재배포).
 - 같은 날 영상 한 판 기록: 작전 39-33 승리 TURN 71, 작전 40-3 패배(달성도 81%). 시뮬과의 비교 수치는 내 정보 기준이라 비공개 `AI\temp\partynavigator\work\video_1105\COMPARE.md`([docs/ingame_samples.md](docs/ingame_samples.md) 맨 아래).
@@ -2183,7 +2183,7 @@ ew-extract`·시즌 1022·빌드 26429597 로 임시 출력과 `data/cosmo_raid.
 - 영상 편성으로 비교(내 정보, 60판): client 가 영상의 승패(8단계 승, 9·10단계 패)와 방향이 맞고 bake 는 9·10단계를 훨씬 낙관했음. 수치는 비공개 `AI\temp\partynavigator\work\client_match_1105\nvsum\INDEX.md`. **원인 확정에 가까움**(11/04 «toughness_elem 으로 더 낙관적이 됨»의 실제 원인 후보 해소). 단 영상의 보스 첫 행동 «3번째»는 시뮬 첫 행동(전역 턴 5)과 여전히 달라 속도 정수화·시작 상태 쪽이 남았음.
 - 길방 시뮬 표를 이 기본으로 재생성(234,000판, 1,020초). off 최고 단계: ×1.5 4→5, ×2.5 8 유지, ×3 9 유지(클리어율 .72→.60). max 쪽은 ×1.5 1→2, ×2 4→6, ×2.5 6→7, ×3 6→7(어필 중 보스 공격이 클라에서 약해지는 효과). 전체 시험 80/0(e2e 포함).
 - 독립 리뷰(Sonnet, 커밋 범위 `a3e6619..22d69e7`): 지적 1건 반영 — 합산용 고정 효과가 보스의 강화 효과 개수(`n_good`)를 +1 하던 회귀를 `cat='marker'` 로 고치고 시험에 `n_good` 동일 단정 추가(marker 를 빼면 실패함을 확인). bake 모드는 구 커밋과 난수열까지 동일, 단계 0 값 불변, 공격력 이중 적용 없음 확인. 남은 사소한 차이: client 는 공격력을 내림하지 않음(약 0.003%). 평탄 속도 가산이 클라 식의 같은 floor 안인지는 원본 확인 못 함. 수정 뒤 길방 표를 다시 만들었으나 파일이 동일했음.
-- e2e: 이 PC에 Playwright(1.64.1)를 `<workspace>/venv-pw` 에 새로 설치(브라우저 chromium-1248 은 전날 설치돼 있었음). `test_request_diagnostics` 가 새 Chromium 에서 `/README.md` 이동을 «다운로드»로 처리해 실패해 `/index.html` 로 바꿨음. 실행: `python -X utf8 -I tools/run_tests.py --rebuild --e2e <workspace>/venv-pw\Scripts\python.exe`.
+- e2e: 이 PC에 Playwright(1.64.1)를 `<workspace>/_env/venv-pw` 에 새로 설치(브라우저 chromium-1248 은 전날 설치돼 있었음). `test_request_diagnostics` 가 새 Chromium 에서 `/README.md` 이동을 «다운로드»로 처리해 실패해 `/index.html` 로 바꿨음. 실행: `python -X utf8 -I tools/run_tests.py --rebuild --e2e <workspace>/_env/venv-pw\Scripts\python.exe`.
 - 남은 클라 차이 점검(2026-11-05, 읽기 전용 조사, 기록 `AI\temp\partynavigator\work\client_match_1105\*_spec.md`): 서든데스 사망자 재적용(부활 경로에 호출 없음 — 추정, 기본 유지), 수호자 동률(클라: 전열 우선→낮은 칸)·틱당 1회 고정, 반응 이력 불발 삭제(사실상 일치), 아군 공격 선제 방어(일치·적 PD 부여원 없음), 카운터와 지속 피해(일치), 노바 정책(일치, 클라 자동 호출 없음), 격파 피해 감소 -15%p 지속(클라는 자기 턴 끝까지, 엔진은 턴 시작에 해제 — 영향 작음), 보스 2종은 격파 시 게이지 0 버프가 없음(엔진은 몬스터 전부 0), `ally_break_gauge=skip` 은 클라 코드 근거 없음(사용자 관찰만), 속도 정수화·틱 절삭 미반영(`gauge_int` 후보).
 
 ## ▶ 2026-11-05 (게임 PC, Claude) — 남은 클라 맞추기 3개 기본 전환 (푸시 완료 28293f8·a3e6619)
@@ -2301,7 +2301,7 @@ html 1.2448868 exit=0
 - 최고 단계는 클리어율 50% 이상인 후보 기준임. 표는 공개 표준 육성으로만 만들었음. 엔진 소규모 시험(커뮤니티 편성·×2·6단계·불의 고동·seed=7·12판)은 off/max 진행도 0.6696/0.5710, 클리어율 8.33%/0%였고 양쪽 진행도>0을 확인했음.
 - 추가 프리셋은 `--sets off,max,no_void=3330` 형태로 받음(순서: 소멸·불멸·쇠락·허무, 각 0~3). 커뮤니티 편성·12판·불의 고동/격돌의 돌풍·0~12단계 소규모 비교에서 최고 기대 점수는 ×2 off/max/no_void 32,962/38,772/37,341, ×3 46,472/52,011/50,636이었음. 이 표본에서는 no_void가 max를 넘지 않았음. 전체 256조합 최적을 보장하지 않으며 기본 표에는 off/max만 넣었음.
 - 시험을 일부러 깨뜨린 경우 7건을 모두 잡았음: 엔진 선택 효과 끄기, 빌더의 sets 전달 끄기, 병렬 결과 순서 뒤집기, payload의 bySets 제거, 화면의 프리셋 비교 끄기·off 결과 재사용·점수 가산 제거. 메모리에서만 바꿨고 실제 소스는 정상 상태로 유지했음. 새 시험은 기본 인자→파일→화면 자료 전달, 프리셋 승자 전환, 추가 프리셋·옛 자료 호환을 확인함.
-- 수정 전 기준선은 69 통과/실패 0, 최종 `python -X utf8 -I tools/run_tests.py --rebuild`는 시험 파일 70 통과/실패 0이었음. `python -X utf8 -I tools/run_tests.py --e2e <workspace>/venv-pw\Scripts\python.exe`는 전체 71 통과/실패 0이었음(e2e 내부 31개 모두 통과, `test_guild_defense`·`test_guild_season_rollover`·`test_guild_search` 포함). `git diff --check`도 통과했음.
+- 수정 전 기준선은 69 통과/실패 0, 최종 `python -X utf8 -I tools/run_tests.py --rebuild`는 시험 파일 70 통과/실패 0이었음. `python -X utf8 -I tools/run_tests.py --e2e <workspace>/_env/venv-pw\Scripts\python.exe`는 전체 71 통과/실패 0이었음(e2e 내부 31개 모두 통과, `test_guild_defense`·`test_guild_season_rollover`·`test_guild_search` 포함). `git diff --check`도 통과했음.
 - 독립 리뷰는 커밋 없이 HEAD `9c8808a` 기준 diff와 소스·시험의 불변 사본으로 두 번 했음(병렬화 추가분 포함). 수정 필요 지적은 없었음. 엔진 규칙·골든·해시를 바꾸지 않았고 계정 자료를 사용하지 않았음. 실제 영상 재대조는 하지 않았음. Claude 가 `run_tests.py`(70 통과)·길방 e2e 3개를 다시 돌려 확인한 뒤 커밋·푸시했음.
 - e2e 흔들림: 작업 전 `--rebuild --e2e` 에서 `test_guild_season_rollover` 가 콘솔 `ERR_CONNECTION_REFUSED` 1줄로 실패(기능 판정은 전 0/후 1 정상)했고, 단독 3회 재실행은 모두 통과했음. 앞서 `test_load_no_errors` 도 로드 시간 초과로 한 번 실패했음. 매번 다른 시험이라 부하·시험 서버 흔들림으로 보고, 반복되면 해당 요청 주소를 기록해 원인을 보기로 함.
 
@@ -2376,7 +2376,7 @@ html 1.2448868 exit=0
   - `wave_gauge_test` 도 진행도 0 스테이지라 웨이브 전환이 한 번도 안 일어났음 → 태양 회랑 250층 + 전환 직후 아군 게이지(reset 0 / keep 이월)를 직접 확인하는 시험 추가.
   - **다음에 할 것(리뷰로 확인된 결함, 데이터 작업 필요)**: ① 〈강화 불가〉 중에도 `ForceApplyEffect` 강화는 걸림(NKM 4053, BUFF_TEMPLET 351개가 True) — 엔진은 전부 거부해서 공허조율자 «조율»(어려움 34-6·39-3) 같은 강제 적용 중첩을 막음. 효과 한글 이름 ↔ BuffStrID ↔ ForceApplyEffect 표를 `tools/` 로 뽑아 `add_effect` 거부 조건에 넣어야 함. ② `_limit_damage`(mc.py ~2305)가 치명 피해 때 새 〈불사〉·후속 강화(카넬리아 칠흑의 잔향 등)를 `add_effect` 없이 직접 넣어 〈강화 불가〉를 우회함 — ①의 표로 같이 처리. ③ 강인한 타격 50% 시험(발생 비율 확인)이 아직 없음.
   - 반영 안 한 리뷰 지적: 격돌의 돌풍 게이지 3,000 이 2,000 이어야 한다는 지적은 틀림 — 11/01 패치로 2000→3000(docs/HISTORY.md 11/01 절). 이 PC 의 static-data 에 11/01 표가 없어 생긴 오판.
-- 수정분은 codex 로 한 번 더 검토(지적 3건: 확률 추가 발동 경로 누락·강인한 타격 판정 재사용·시험이 기능 제거를 못 잡음 → 모두 반영). 전체 Python·JS 시험·골든·e2e(Playwright, `<workspace>/venv-pw`) 통과. (→ 경로는 새 «환경·주의»의 <workspace>/venv-pw 기준)
+- 수정분은 codex 로 한 번 더 검토(지적 3건: 확률 추가 발동 경로 누락·강인한 타격 판정 재사용·시험이 기능 제거를 못 잡음 → 모두 반영). 전체 Python·JS 시험·골든·e2e(Playwright, `<workspace>/_env/venv-pw`) 통과. (→ 경로는 새 «환경·주의»의 <workspace>/_env/venv-pw 기준)
 - 이 PC 의 `starsavior-static-data` 가 10/22 빌드라 `myinfo_stats_test` 가 실패했음 → pull 후 통과. 새 PC·오랜만의 PC 에서는 두 저장소 다 pull 부터.
 
 ## ▶ 2026-11-02 밤 — `enforce_timing` 기본을 `queue` 로 전환 (푸시 완료)
@@ -2613,7 +2613,7 @@ html 1.2448868 exit=0
 - 내 정보 추출 도구: 게임 PC 정상 경로에서 실패 보고(진단: 9300~9400 흐름 없음, 패킷 2142개가 IPv4/TCP 아님). IPv6 해독 지원·진단 글자 깨짐·사용자 이름/IP 가림을 올렸고, codex 리뷰 결함 8건(진단에 원시 바이트, 가림 빈틈, 재조립, 시작 실패 무시, UAC 취소 등)과 원인 진단 강화를 비공개 저장소 브랜치 `fix-myinfo-review` 에서 진행. → (23:30 해결·게임 PC 성공 확인) 실패 원인은 회사 VPN(Cato Networks Tunnel) 어댑터가 이더넷 헤더 없는 IP 패킷을 내보내는데 pktmon 이 linktype 1 로 적어 해독기가 버린 것. raw-IP 판정(IPv4 체크섬·길이, IPv6 길이) 추가, 리뷰 결함 12건 수정, 원인별 화면 안내·원인 확정용 진단(게임 PID·시작 시각·실제 연결, 패킷 종류별 수), 합성 캡처 시험(`starsavior-packet-ref/myinfo/tests/verify.py`). 버튼 이름 「내 계정 정보 불러오기 / 계정 정보 다시 불러오기」.
 
 ### 남은 일
-1. (10/23 완료) **아카라이브 정보/공략 글 업로드** — 원고·스크린샷 `<workspace>/아카라이브-파티네비게이터\`(비공개 PC 폴더, 저장소 밖). 제보는 그 글 댓글로 받기로 함(댓글 양식 = 원고 끝 절). (10/24 완료) 원글 https://arca.live/b/starsavior/186845178 — 사이트·추출 도구·공개 README 의 「관리자에게 보내 주세요」를 「아카라이브 원글 댓글로」+링크로 바꿈. 10/24 패치내역 원고 = 같은 폴더 `패치내역_20261024_붙여넣기용.txt`. 추천 변화 비교 도구 = `<workspace>/tools\recodiff\`(`python -X utf8 recodiff.py <main경로> <브랜치경로> --out <파일>`).
+1. (10/23 완료) **아카라이브 정보/공략 글 업로드** — 원고·스크린샷 `<workspace>/_records/아카라이브-공지\`(비공개 PC 폴더, 저장소 밖). 제보는 그 글 댓글로 받기로 함(댓글 양식 = 원고 끝 절). (10/24 완료) 원글 https://arca.live/b/starsavior/186845178 — 사이트·추출 도구·공개 README 의 「관리자에게 보내 주세요」를 「아카라이브 원글 댓글로」+링크로 바꿈. 10/24 패치내역 원고 = 같은 폴더 `패치내역_20261024_붙여넣기용.txt`. 추천 변화 비교 도구 = `<workspace>/_env/tools\recodiff\`(`python -X utf8 recodiff.py <main경로> <브랜치경로> --out <파일>`).
 2. (10/23 밤 정정, 61% 로 아직 약간 낙관) **성간 회랑 낙관**(시뮬 96% vs 실측 2패): 턴당 받은 피해 1.4배 부족, 페이 준 피해 1.88배 과대. 후보 = 보스 반격 「공허의 재결」 빈도·시점(반격 제거 시 받은 피해 8,558 → 6,214 로 영향 큼), 조율자 EXTRA 횟수(영상 2회 이상 vs 시뮬 1회).
 3. 37-36 샤를 첫 행동(시뮬 늦음), 37-3 큰 보스전 비관(10/23 재조사: 엔진 근거 없음, 내 정보 포함 재촬영 필요).
 4. 보스 브레이크 지속(브레이크 → 보스 다음 행동까지 실측 아군 3~4행동, 시뮬 평균 2.5) 가설, 일부 궁극기 강인도 값 미측정(`docs/toughness_video.md`).
@@ -2646,7 +2646,7 @@ html 1.2448868 exit=0
 ### ▶▶ 다른 PC 에서 이어서 시작하는 법 (2026-10-23 밤 인수)
 시작 멘트 예: 「파티 네비게이터 이어서 — HANDOFF 맨 위 `다른 PC 에서 이어서 시작하는 법` 순서대로」. 이 PC(게임 설치 PC)에서 할 수 있는 것은 다 했고, 나머지는 아래 순서로 다른 PC 에서 진행하기로 함(사용자 결정).
 0. **받기**: 공개 `git pull`(main) + `git fetch origin ui-gimmick-plain`(기믹 박스 쉬운 말 개편, main 과 충돌 없음 확인, 병합 대기; `fix-any-turn-clock` 은 이미 main 에 병합됨), 비공개 `starsavior-static-data` `git pull`(여기에 10/23 내 정보 샘플·영상 판독 노트·조사 노트·도구가 있음: `samples/myinfo_2026-10-23.json`, `analysis/ingame_2026-10-23/README.md` 가 색인). 게임이 없는 PC 면 영상·클라 추출은 못 하니 아래 1~4 는 노트와 `ingame_check.py` 로 가능한 범위만.
-1. **검증(사용자 요청: 자세한 체크는 다른 PC)**: ① 전체 시험(`tests/*_test.py`, `tests/golden_check.py` 골든 `--write` 금지, `node tests/*.js`, 브라우저 e2e 27개; e2e 는 `<workspace>/venv-pw` 또는 venv+Chrome 채널, 이전부터 `test_load_no_errors` 1개 favicon 404 로 실패) ② `python -X utf8 -I tools/ingame_check.py --runs 100 --only <샘플> --bs-real --myinfo <static-data>/samples/myinfo_2026-10-23.json` 로 샘플 전부(37-36r·37-36r2·17x-a·17x-b·18x-a·18x-b, 성간 회랑 샘플은 아래 3번에서 추가) 재실행해 결과 기록 ③ `fix-any-turn-clock` 브랜치(e3f4812): e2e 와 추천 결과 변화(`data/quick.json` 재맞춤분) 확인 후 병합 여부 결정(병합하면 사이트 추천이 바뀜).
+1. **검증(사용자 요청: 자세한 체크는 다른 PC)**: ① 전체 시험(`tests/*_test.py`, `tests/golden_check.py` 골든 `--write` 금지, `node tests/*.js`, 브라우저 e2e 27개; e2e 는 `<workspace>/_env/venv-pw` 또는 venv+Chrome 채널, 이전부터 `test_load_no_errors` 1개 favicon 404 로 실패) ② `python -X utf8 -I tools/ingame_check.py --runs 100 --only <샘플> --bs-real --myinfo <static-data>/samples/myinfo_2026-10-23.json` 로 샘플 전부(37-36r·37-36r2·17x-a·17x-b·18x-a·18x-b, 성간 회랑 샘플은 아래 3번에서 추가) 재실행해 결과 기록 ③ `fix-any-turn-clock` 브랜치(e3f4812): e2e 와 추천 결과 변화(`data/quick.json` 재맞춤분) 확인 후 병합 여부 결정(병합하면 사이트 추천이 바뀜).
 2. **브레이크 스킬 모델 정정(우선순위 1, 별도 브랜치 권장)**: 클라 표(5종 완전 정의, 위 「브레이크 스킬 5종 클라 표 조사」 항목과 비공개 노트) 기준으로 ① 영역 지속을 표 5(전역 턴 시계 `global_turns`)로 ② 행성 정화 `mc.break_skills` 등록(피해 100%·강인도 피해 +1·스킬 사용 뒤 노바 +1 기능 신규) ③ 스타피어서·특이점 관측·차원 강습 영역/효과 점검 ④ 혹한의 습격 낙관 원인 확인(시뮬은 보스 브레이크·큐브 발동이 각 2.0회, 실측 각 1회 — 브레이크 빈도). 바꾼 뒤 `build_simpack` → 계수 재맞춤(`gen_quick_calib.py --per-content 400` → `calibrate_quick.py --write`, 약 15분) → 샘플 재대조 → e2e.
 3. **성간 회랑 샘플 추가**: 영상 판독 노트(비공개 `analysis/ingame_2026-10-23/notes/video_corridor/notes_corr_a·b·c.md`; a·b = 프로페서M 리더 2패(394,126), c = 카르멘 리더 1클리어) → `tools/ingame_check.py` SAMPLES 에 `corr-a`·`corr-b`·`corr-c`(콘텐츠 성간 회랑, FLOOR 355 Lv2237, 편성 [프로페서M 후, 카르멘 전, 페이 전, 클레어 후], 브레이크 스킬 스타피어서 Lv3 → `BS_REAL`; 스타피어서는 엔진 지원 여부 확인) + `docs/ingame_samples.md` 새 절. c 판 클리어 vs a·b 패배(보스 HP 4~10k 남김)를 시뮬이 가르는지가 핵심.
 4. **그 밖**: 37-36 샤를 첫 행동(속도 감소 차감 기준, 시뮬 TURN 19 vs 실측 16), 카르멘 「여유로운 응수」 해제 조건(클라 `DC_ATTACK` 해제 vs 엔진 무한 지속; 성간 회랑 c 판 관찰 참고, 게임 확인 필요), 큰 보스전(37-3) 원인, favicon 404.
@@ -2658,7 +2658,7 @@ html 1.2448868 exit=0
 - **혹한의 습격(장비 탐색)에서 시뮬이 낙관적**: XVII(1승 1패)는 시뮬 100%, XVIII(2패)는 92%. 전체 행동 수가 TURN 의 1.1~1.28배, 딜러(아모라·그웬) 준 피해 과대, 받은 피해 과소. 큐브 과부하 미장착일 때가 실측에 더 가까움(XVIII 33% vs 장착 92%). 엔진 출력에 큐브 과부하 회복이 0 으로 잡히나 실측은 아군 HP +7,936(아모라 확인, 약 5턴 지속 카운트다운 5→1, 「치트 매트릭스가 개방되었습니다」). **브레이크 스킬 5종 클라 표 조사 완료(노트 비공개 저장소 `analysis/ingame_2026-10-23/notes/break_skills/notes_break.md`)**: 5종 모두 클라 표에 완전 정의(표만으로 엔진 반영 가능, 데이터북에는 없음). 경로 `ORBITAL_ARRAY_TEMPLET` → 피해 `DAMAGE_TEMPLET.AllyAllAtkFactor`·회복 `HEAL_TEMPLET.AllyAllHpFactor` → 영역 `ORBITAL_DOMAIN_TEMPLET.CharmList` → `BATTLE_EFFECT_TEMPLET`, 레벨 `ORBITAL_LEVEL_GROUP_TEMPLET`, 효과 `SE_TEMPLET_ORBITAL_ARRAY`. 공통 쿨 8·발동 포인트 3·영역 지속 5. 101 특이점 관측 ATK 70%·노바 4·영역 공·방 +20%, 102 스타피어서 ATK 50%·아군 전체 게이지 +20%·영역 치확·치피 +10, 103 큐브 과부하 HP 2% 회복·오메가 프로토콜 2턴(공격력·효과적중 +15%)·영역 속도 +10(디펜더·서포터 +10 추가), 104 행성 정화 ATK 100%·영역 강인도 피해 +1·스킬 사용 후 노바 +1, 105 차원 강습 ATK 50%·노바 4·영역 공격력 +15%·강인도 피해 +1. 큐브 과부하 회복 계수는 실측과 일치(18x-b 팀 최종 HP 합 317,390 × 2.5% = 7,934.75 vs 실측 +7,936). 「행성 정화 자료 상충」은 appmedia(강인도 피해 +1·노바 +1, 계수 비공개)와 starsavior-db(미출시, 공격력 +10%·방어력 감소)의 충돌이었고 클라 표는 appmedia 쪽이 맞음. **엔진 차이**: 영역 지속이 표는 5인데 엔진은 4(아군 유닛 턴마다 -1) — 영상의 5→1 카운트다운(T22~T26)은 표와 일치, 전역 턴 시계(`global_turns`)로 통일 권장; 행성 정화 미등록(`mc.break_skills` 에 추가 + 「영역 보유자가 스킬 사용 뒤 노바 +1」 기능 필요). **18x 낙관의 원인은 큐브 정의로는 설명되지 않음** — 시뮬은 보스 브레이크 2.0회·큐브 2.0회, 실측은 각 1회뿐이라 브레이크 빈도 쪽이 유력. 표로 확정 안 되는 것: 스타피어서 게이지 +20% 가 발동자 포함인지, 쿨 단위, 노바 +1 이 일반 스킬에도 붙는지, 영역 재발동 갱신 규칙(영상 실측 필요).
 - **성간 회랑 FLOOR 355 Lv2237**: 프로페서M 리더 판 2패 판독(비공개 저장소 노트). 사용자가 카르멘 리더(사이트 추천 그대로)로 다시 찍어 올 예정 — 도착하면 `SAMPLES` 에 `corr-*` 로 추가(브레이크 스킬 스타피어서 Lv3, 엔진 지원 여부 확인). 카르멘은 탱커·힐러(준 피해 4% 안팎, 파티 회복의 82~89%). 「여유로운 응수」 라벨은 영상에 안 보임.
 - **푸시된 것(2026-10-23 밤)**: 공개 저장소 main(스킬 아이콘 220개 포함 `assets/skill_icons/`, README 면책, 샘플·문서)과 브랜치 `fix-any-turn-clock`. 비공개 `starsavior-static-data`(5aea947): `samples/myinfo_2026-10-23.json`, `analysis/ingame_2026-10-23/`(영상 판독 노트·조사 노트, README 에 목록), `tools/ingame/`(아이콘 추출·원인 추적 스크립트).
-- **다른 PC 에서 먼저 할 일**: ① 두 저장소 `git pull`(공개 main + `git fetch` 로 브랜치) ② `static-data/samples/myinfo_2026-10-23.json` 로 `python -X utf8 -I tools/ingame_check.py --runs 100 --only <샘플> --bs-real --myinfo <경로>` 재실행 ③ e2e: `<workspace>/venv-pw` 또는 이 PC 방식(venv + Chrome 채널, `test_load_no_errors` 는 favicon 404 로 이전부터 실패) ④ 브랜치 병합 여부 결정. 이 PC 의 임시물: `<workspace>/partynavigator\venv-extract`(179MB)·`venv-pw`·`wt_clock`.
+- **다른 PC 에서 먼저 할 일**: ① 두 저장소 `git pull`(공개 main + `git fetch` 로 브랜치) ② `static-data/samples/myinfo_2026-10-23.json` 로 `python -X utf8 -I tools/ingame_check.py --runs 100 --only <샘플> --bs-real --myinfo <경로>` 재실행 ③ e2e: `<workspace>/_env/venv-pw` 또는 이 PC 방식(venv + Chrome 채널, `test_load_no_errors` 는 favicon 404 로 이전부터 실패) ④ 브랜치 병합 여부 결정. 이 PC 의 임시물: `<workspace>/partynavigator\venv-extract`(179MB)·`venv-pw`·`wt_clock`.
 - 남은 일 요약: 큐브 과부하/행성 정화/스타피어서 모델 점검, 37-36 첫 행동 시점(속도 감소 차감), 카르멘 「여유로운 응수」 해제 조건(`DC_ATTACK` 클라 vs 엔진 무한 지속, 게임 확인 필요), 큰 보스전 원인 미해결(37-3), favicon 404.
 
 (원래 요청 원문, 참고)
@@ -2685,7 +2685,7 @@ html 1.2448868 exit=0
 
 시작 절차
 1. 세 저장소 최신 받기: `<workspace>/starsavior-party-navigator`(main), `<workspace>/starsavior-static-data`, `<workspace>/starsavior-packet-ref` 에서 `git pull --ff-only`. 작업 사본 `<workspace>/pn-community`(worktree, 브랜치 community-removal)는 `git merge --ff-only origin/main`.
-2. 시험 기준선: 단위 `tests/*_test.py`·`node tests/*.js`·`tests/golden_check.py`(STARSAVIOR_STATIC 지정), 브라우저 `<workspace>/venv-pw\Scripts\python -X utf8 tests\e2e\test_page.py`(27개, 약 4~5분). 10/23 기준 전부 통과.
+2. 시험 기준선: 단위 `tests/*_test.py`·`node tests/*.js`·`tests/golden_check.py`(STARSAVIOR_STATIC 지정), 브라우저 `<workspace>/_env/venv-pw\Scripts\python -X utf8 tests\e2e\test_page.py`(27개, 약 4~5분). 10/23 기준 전부 통과.
 3. ⚠ 10/22 밸런스 변경 스테이지(작전 최종 보스 26·27·28·30·35·36·37-36, 토벌)의 패치 전 실측·공략 영상은 참조 금지(사용자 지시). 유효한 실측: 37-2~37-5(10/21), 혹한의 습격 17·17e·17r(10/23).
 
 남은 일(권하는 순서) — 모두 이 PC 에서 가능(자료는 비공개 저장소에 있음)
@@ -2770,7 +2770,7 @@ html 1.2448868 exit=0
 ## 작업 방식
 
 - 구현은 별도 worktree(`git worktree add -b <브랜치> <workspace>/pn-<이름> main`)에서 codex(`gpt-6-astra`, high)로, 검토는 래퍼 `codex-review.ps1`(읽기 전용).
-- 시험: `tests/*_test.py`, `tests/golden_check.py`(골든 `--write` 금지), web/quick/shim_compat 는 `tests/run_workspace_test.py tests/<이름>.py` 경유, `node tests/*.js`, 브라우저 `<workspace>/venv-pw\Scripts\python -X utf8 tests\e2e\test_page.py`(27개).
+- 시험: `tests/*_test.py`, `tests/golden_check.py`(골든 `--write` 금지), web/quick/shim_compat 는 `tests/run_workspace_test.py tests/<이름>.py` 경유, `node tests/*.js`, 브라우저 `<workspace>/_env/venv-pw\Scripts\python -X utf8 tests\e2e\test_page.py`(27개).
 - 엔진을 바꾸면 `tools/build_simpack.py` → 계수 재맞춤(`tools/gen_quick_calib.py --per-content 400` → `tools/calibrate_quick.py --write`, 약 15분) → e2e.
 - 문서 문체: 존칭 없이 「했음·하기로 함」, 담백, 참고는 주소만.
 

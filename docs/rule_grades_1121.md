@@ -7,7 +7,7 @@
 ## 근거 범위
 
 static-data `check_build.py`: 설치본·디컴파일 buildid 26752678, DLL 10개 불일치 0.
-`NKM`·`NKM.Templets`는 static-data `decompiled/` 아래의 각 `*.decompiled.cs`, `T`는 `E:/AI_mk2/rebuild_26752678/T`임.
+`NKM`·`NKM.Templets`는 static-data `decompiled/` 아래의 각 `*.decompiled.cs`, `T`는 `E:/AI_mk2/_builds/26752678/rebuild/T`임.
 3월판 디컴파일, 커뮤니티 수치, 계정 입력은 근거로 쓰지 않았음.
 
 ## 등급 체계 정리

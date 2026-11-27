@@ -2,11 +2,11 @@
 
 ## 근거 범위
 
-지정된 PC 설치본 buildid=26752678과 `E:/AI_mk2/decomp_26752678/dll/`의
+지정된 PC 설치본 buildid=26752678과 `E:/AI_mk2/_builds/26752678/decomp/dll/`의
 NKM·NKM.Templets·Star.Templets SHA256이 일치함을 직접 확인했음.
 비공개 static-data는 pull 후 최신이지만 기본 `decompiled/`는 26610546이므로 사용하지 않았음.
-아래 NKM·Star.Templets 줄은 `E:/AI_mk2/decomp_26752678/set10/clean/` 아래
-각 어셈블리의 `*.decompiled.cs`, 표 줄은 `E:/AI_mk2/rebuild_26752678/T/` 기준임.
+아래 NKM·Star.Templets 줄은 `E:/AI_mk2/_builds/26752678/decomp/set10/clean/` 아래
+각 어셈블리의 `*.decompiled.cs`, 표 줄은 `E:/AI_mk2/_builds/26752678/rebuild/T/` 기준임.
 공개 저장소에는 원문 표·계정 입력·계정 결과를 넣지 않았음.
 
 ## 항목별 확정

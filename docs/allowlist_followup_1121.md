@@ -94,7 +94,7 @@ RECEIVE·음수 보정·0 경계는 분리한 회귀 시험에서 검증했으�
 
 최종 검증은 공용 `E:/AI_mk2/_testlock`을 획득하고 owner.txt를 기록한 뒤
 `STARSAVIOR_STATIC=E:/AI_mk2/starsavior-static-data`,
-`COSMO_TABLES=E:/AI_mk2/rebuild_26752678/T`로
+`COSMO_TABLES=E:/AI_mk2/_builds/26752678/rebuild/T`로
 `python -X utf8 -I tools/run_tests.py --rebuild --strict`를 실행했음.
 **246파일 통과·실패0·건너뜀0**이었고 종료 후 자기 잠금을 해제했음.
 워커 실행·브라우저 e2e는 하지 않았음. 화면 소스·탐색 정책은 그대로이며

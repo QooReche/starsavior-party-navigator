@@ -13,7 +13,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-SRC = Path('E:/AI_mk2/role-private/casebook_myinfo/site_reco/fullscreen/browser.json')
+SRC = Path('E:/AI_mk2/_private/role-private/casebook_myinfo/site_reco/fullscreen/browser.json')
 
 
 def specs(src):

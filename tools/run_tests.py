@@ -33,7 +33,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('only', nargs='*', help='이 낱말이 이름에 들어간 시험만')
     ap.add_argument('--rebuild', action='store_true', help='tools/build_simpack.py, build_party_html.py index.html 먼저')
-    ap.add_argument('--e2e', metavar='PYTHON', help='Playwright 가 깔린 python 경로(예: E:\\AI_mk2\\venv-pw\\Scripts\\python.exe)')
+    ap.add_argument('--e2e', metavar='PYTHON', help='Playwright 가 깔린 python 경로(예: E:\\AI_mk2\\_env\\venv-pw\\Scripts\\python.exe)')
     ap.add_argument('--strict', action='store_true', help='환경 때문에 건너뛴 검사가 하나라도 있으면 실패로 침')
     ap.add_argument('--timeout', type=int, default=900)
     a = ap.parse_args()

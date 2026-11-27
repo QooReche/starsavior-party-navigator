@@ -65,8 +65,8 @@
 ## 재현
 
 ```
-set PLAYWRIGHT_BROWSERS_PATH=<workspace>\pw-browsers
-<workspace>/venv-pw/Scripts/python.exe -X utf8 tools/bench_fullscreen.py browser --myinfo <비공개 myinfo.json>
+set PLAYWRIGHT_BROWSERS_PATH=<workspace>\_env\pw-browsers
+<workspace>/_env/venv-pw/Scripts/python.exe -X utf8 tools/bench_fullscreen.py browser --myinfo <비공개 myinfo.json>
 python -X utf8 -I tools/bench_fullscreen.py eval --workers 8
 python -X utf8 -I tools/bench_fullscreen.py report
 ```
@@ -117,8 +117,8 @@ python -X utf8 -I tools/bench_fullscreen.py report
 ### 재현(묶은 뒤)
 
 ```
-<workspace>/venv-pw/Scripts/python.exe -X utf8 tools/bench_fullscreen.py browser --myinfo <비공개 myinfo.json> --out <비공개>/batch/final --profile
-<workspace>/venv-pw/Scripts/python.exe -X utf8 tools/bench_fullscreen.py browser --myinfo <…> --out <비공개>/batch/a1full_chunk1 --profile --chunk 1 --only "작전 44-6,회랑 580"
+<workspace>/_env/venv-pw/Scripts/python.exe -X utf8 tools/bench_fullscreen.py browser --myinfo <비공개 myinfo.json> --out <비공개>/batch/final --profile
+<workspace>/_env/venv-pw/Scripts/python.exe -X utf8 tools/bench_fullscreen.py browser --myinfo <…> --out <비공개>/batch/a1full_chunk1 --profile --chunk 1 --only "작전 44-6,회랑 580"
 python -X utf8 -I tools/profile_fullscreen.py --batch
 python -X utf8 -I tests/batch_identity_test.py
 ```
@@ -150,9 +150,9 @@ python -X utf8 -I tests/batch_identity_test.py
 ### 재현(작업자 2개)
 
 ```
-<workspace>/venv-pw/Scripts/python.exe -X utf8 tools/bench_fullscreen.py browser --myinfo <…> --out <비공개>/workers2 --browser-workers 2 --only "회랑 580,작전 44-6,작전 36-36"
-<workspace>/venv-pw/Scripts/python.exe -X utf8 tools/bench_fullscreen.py browser --myinfo <…> --out <비공개>/workers2/w8 --browser-workers 8 --only "회랑 580,작전 44-6,작전 36-36" --modes on
-<workspace>/venv-pw/Scripts/python.exe -X utf8 tools/bench_fullscreen.py browser --myinfo <…> --out <비공개>/workers2/stop --browser-workers 2 --only "작전 44-6" --stop-after 30
+<workspace>/_env/venv-pw/Scripts/python.exe -X utf8 tools/bench_fullscreen.py browser --myinfo <…> --out <비공개>/workers2 --browser-workers 2 --only "회랑 580,작전 44-6,작전 36-36"
+<workspace>/_env/venv-pw/Scripts/python.exe -X utf8 tools/bench_fullscreen.py browser --myinfo <…> --out <비공개>/workers2/w8 --browser-workers 8 --only "회랑 580,작전 44-6,작전 36-36" --modes on
+<workspace>/_env/venv-pw/Scripts/python.exe -X utf8 tools/bench_fullscreen.py browser --myinfo <…> --out <비공개>/workers2/stop --browser-workers 2 --only "작전 44-6" --stop-after 30
 ```
 
 ## 훑기 연출 «관측 경보 → 강제 탐색» — 2026-11-22

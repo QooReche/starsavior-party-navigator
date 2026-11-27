@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 r"""실제 sim_worker.js 부팅 측정. 생성물 재생성 없이 기존 manifest의 파일을 읽음.
 
-E:\AI_mk2\venv-pw\Scripts\python.exe -X utf8 -I tools/bench_cosmo_boot.py --output local/cosmo-boot.json
+E:\AI_mk2\_env\venv-pw\Scripts\python.exe -X utf8 -I tools/bench_cosmo_boot.py --output local/cosmo-boot.json
 새 브라우저 컨텍스트 / 같은 컨텍스트의 새 워커 / 같은 워커 재사용을 3회 비교함.
 """
 import argparse

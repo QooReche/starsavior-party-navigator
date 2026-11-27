@@ -57,7 +57,7 @@ HANDOFF 남은 일 22·24. Claude 가 후보안(A1/A2, B1/B2, C1/C2/C3)을 먼�
 
 ## 구현 기록(11/12)
 
-비차단 후속(11/12): `growthSig/growthConditions`에서 수동 모드·`BRSEL/SESSION_BR`를 1단계 콘텐츠 조건으로 옮겼음. `compatible`은 공통 맥락만 비교하며 이전 v5 서명도 정규화해 기록을 유지함. `historyContext/priority`는 콘텐츠 종류별 최신 조건만 집계하고 `growthPriority/growthPaint`는 현재 선택 조건까지 대조하므로, 모드·브레이크가 다른 작전 기록과 단계·시즌이 지난 길방 기록은 저장소에 남되 집계에서 제외됨. `growthCosmo`는 기준팀 밖 편성 목록 없음·보스 누락·잘못된 편성 행을 건너뛰고 `growthSeasonPaint` 상세에 행 번호와 사유를 표시함. 요청한 5개 회귀 시나리오와 기존 v5 호환·미저장 조건 변경·상세 표시를 검사했고, 새 결함 주입 8종 및 수정 전 HEAD `ae23bca`를 사용한 5개 회귀 시험이 모두 실패하는 것을 확인했음. 합성 계정 브라우저 시험에도 불완전한 코스모 행을 추가했음. 수정 전 기준선은 118 통과·0 실패, STARSAVIOR_STATIC을 지정한 최종 `run_tests.py --rebuild --e2e E:\AI_mk2\venv-pw\Scripts\python.exe`는 일반 118개·브라우저 45개 통과(실행기 집계 119 통과·0 실패)였음. 기존 환경 건너뜀 2건은 그대로이며 로그는 `local/ggfix-final.log`, 수정 전 코드 검출 로그는 `local/ggfix-head-mutations.log`임. 엔진·HANDOFF는 변경하지 않았으며 외부 golden은 생략했고 커밋·푸시는 하지 않았음.
+비차단 후속(11/12): `growthSig/growthConditions`에서 수동 모드·`BRSEL/SESSION_BR`를 1단계 콘텐츠 조건으로 옮겼음. `compatible`은 공통 맥락만 비교하며 이전 v5 서명도 정규화해 기록을 유지함. `historyContext/priority`는 콘텐츠 종류별 최신 조건만 집계하고 `growthPriority/growthPaint`는 현재 선택 조건까지 대조하므로, 모드·브레이크가 다른 작전 기록과 단계·시즌이 지난 길방 기록은 저장소에 남되 집계에서 제외됨. `growthCosmo`는 기준팀 밖 편성 목록 없음·보스 누락·잘못된 편성 행을 건너뛰고 `growthSeasonPaint` 상세에 행 번호와 사유를 표시함. 요청한 5개 회귀 시나리오와 기존 v5 호환·미저장 조건 변경·상세 표시를 검사했고, 새 결함 주입 8종 및 수정 전 HEAD `ae23bca`를 사용한 5개 회귀 시험이 모두 실패하는 것을 확인했음. 합성 계정 브라우저 시험에도 불완전한 코스모 행을 추가했음. 수정 전 기준선은 118 통과·0 실패, STARSAVIOR_STATIC을 지정한 최종 `run_tests.py --rebuild --e2e E:\AI_mk2\_env\venv-pw\Scripts\python.exe`는 일반 118개·브라우저 45개 통과(실행기 집계 119 통과·0 실패)였음. 기존 환경 건너뜀 2건은 그대로이며 로그는 `local/ggfix-final.log`, 수정 전 코드 검출 로그는 `local/ggfix-head-mutations.log`임. 엔진·HANDOFF는 변경하지 않았으며 외부 golden은 생략했고 커밋·푸시는 하지 않았음.
 
 ### 독립 리뷰 후속(11/12)
 
@@ -70,7 +70,7 @@ HANDOFF 남은 일 22·24. Claude 가 후보안(A1/A2, B1/B2, C1/C2/C3)을 먼�
 - 품질 한계는 문서화로 반영했음. 코스모는 가정자당 대조팀이 최대 18개이며 보유 기준 후보까지 재평가하므로, 예산 12,000판 안에서 실제 평가되는 가정자가 1~3명에 그칠 수 있음(계정별 실측은 미확인). 길방은 같은 100판에서 여러 후보 중 최선을 선택한 뒤 부트스트랩을 하므로 선택 편향이 남음. 다중비교 보정·별도 검증 표본은 적용하지 않았으며 구간을 보정된 유의성으로 해석하지 않음.
 - 신규 `tests/growth_review23_test.js`는 실제 UI 서명과 저장 함수를 써서 op→길방 메모리 변경→다른 op, 길방→코스모 탐색/저장, 새 실행 맥락에서 메모리 초기화→op 저장의 기록 보존을 검사함. 공통 조건 변경 시 무효화, 콘텐츠 조건 분리, 탭 전환, 대조팀 예약/완료/기준선·예산·중복 제거·정확한 보유 대조팀 생성, 작업자 판별 배열 전달도 검사함.
 - 새 결함 주입 10종(기록 보존 3경로, 보스 탭, 기준 보스 안내, 정확한 보유 대조팀, 작업자 progs, 길방 대조팀 예약·완료·기준선)을 격리 VM에서 각각 검출한 뒤 정상 구현을 다시 통과했음. 기존 stage23 결함 주입 11종도 통과했음. 대상 시험 5개·브라우저 `test_growth_stage23`가 통과했음. 수정 전 기준선은 일반 117개 통과·0 실패였음.
-- 최종 `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data` 지정 `python -X utf8 -I tools/run_tests.py --rebuild --e2e E:\AI_mk2\venv-pw\Scripts\python.exe`는 일반 118개·브라우저 45개 모두 통과했음(실행기 집계 119 통과·0 실패, 종료 코드 0). 기존 환경 건너뜀 2건(COSMO_TABLES·옆 journeyhelper 없음)은 그대로임. 로그: `local/gg_review_final.log`.
+- 최종 `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data` 지정 `python -X utf8 -I tools/run_tests.py --rebuild --e2e E:\AI_mk2\_env\venv-pw\Scripts\python.exe`는 일반 118개·브라우저 45개 모두 통과했음(실행기 집계 119 통과·0 실패, 종료 코드 0). 기존 환경 건너뜀 2건(COSMO_TABLES·옆 journeyhelper 없음)은 그대로임. 로그: `local/gg_review_final.log`.
 - 요청한 외부 `golden.py` 실행 결과 기본/legacy 78사례·오류 0건이었음. `local/gg_after2.json`과 외부 `base.json`을 `read_bytes()`로 비교해 10,380바이트 전체 동일을 확인했음. SHA-256 `83969d73616b0eadc8b93665adfe54ad1e9174fc63bfe8552e20a090f2579542`. 로그: `local/gg_review_golden.log`. 기준 파일은 수정하지 않았음.
 - 기준 HEAD `3feb786`과 다른 폴더 읽기 전용 조건을 유지해 두 저장소의 pull은 하지 않았음. 커밋·푸시·HANDOFF 변경은 하지 않았음. 실제 계정 자료는 쓰지 않았음.
 
@@ -102,7 +102,7 @@ HANDOFF 남은 일 22·24. Claude 가 후보안(A1/A2, B1/B2, C1/C2/C3)을 먼�
 - `tests/e2e/test_page.py::test_growth_stage23`: 합성 12명 계정으로 옵션→기존 보유 탐색→육성 버튼→길방·실제 코스모 시즌 화면의 결과 카드까지 검사했음. 작업자 결과만 결정적으로 대체하며 후보 생성·재조합·예산·100판 시드·저장·화면은 실제 경로임. 최대 3작업자, 최선 지원·단계 고정, 세 보스 예선 포함·올바른 속성, 코스모 12명 중복 없음, 원본 불변, 시즌 키·요약 저장, 공유 시 저장 금지·내 정보 삭제 연동, 390px 모바일을 확인했음. 기존 실제 Pyodide 시험을 유지했음.
 - 추가 작업자 계약 시험은 실제 `runPhase`를 통해 완료 뒤 협공 제외된 판 수, 최대 3작업자, 시간 제한 시 완료 결과 보존·작업자 종료, 취소 시 늦은 응답 무효화를 검사했음.
 - 외부 `accel-golden/golden.py`: 기본·legacy 78사례, 오류 0건. 출력은 다른 폴더 읽기 전용 조건에 맞춰 이 작업 폴더의 `local/gg_after.json`에 썼음. 외부 `accel-golden/base.json`과 파일 전체 10,380바이트 동일했음. 원래 요청 경로 `accel-golden/gg_after.json`에는 쓰지 않았음.
-- 최종 `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data` 지정 `python -X utf8 -I tools/run_tests.py --rebuild --e2e E:\AI_mk2\venv-pw\Scripts\python.exe`: 일반 117개·브라우저 45개 모두 통과했음(실행기 집계 118 통과·0 실패). COSMO_TABLES·옆 journeyhelper 없음 건너뜀 2건은 그대로임. 첫 전체 검사도 118 통과·0 실패였으며, 후속 보완 뒤 전체를 다시 실행해 확인했음. 무거운 실행은 한 번에 하나씩 했음.
+- 최종 `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data` 지정 `python -X utf8 -I tools/run_tests.py --rebuild --e2e E:\AI_mk2\_env\venv-pw\Scripts\python.exe`: 일반 117개·브라우저 45개 모두 통과했음(실행기 집계 118 통과·0 실패). COSMO_TABLES·옆 journeyhelper 없음 건너뜀 2건은 그대로임. 첫 전체 검사도 118 통과·0 실패였으며, 후속 보완 뒤 전체를 다시 실행해 확인했음. 무거운 실행은 한 번에 하나씩 했음.
 
 ### 남은 미확인
 
@@ -120,7 +120,7 @@ HANDOFF 남은 일 22·24. Claude 가 후보안(A1/A2, B1/B2, C1/C2/C3)을 먼�
 - 기록 호환 blocking 2건은 별도로 고쳤음. 브레이크는 기록의 콘텐츠·팀 선택만 비교하고 세션 선택은 공유 브레이크가 있을 때만 반영함. 새로 고침 뒤 길방·코스모의 빈 탐색 결과는 모름으로 취급하며 시즌·단계·지원 관련 안정 조건·순위 방식 등은 계속 비교함. 기록을 삭제하지 않음.
 - 합성 계정만 사용했음. 새로 고침 기록 집계, 다른 콘텐츠/팀 브레이크, 원본 불변, 상향만 적용, 미보유 선택, 칩 일치, 동률/낮은 점수 숨김, 길방·코스모, 취소·시간 초과를 시험했음. 결함 주입은 메모리 안 복제 모듈에서 실행하여 원본 파일을 바꾸지 않았음. 브라우저 시험은 작전·회랑·수동·옛 형식에서 실제 Pyodide 작업자를 쓰며, 시즌 시험은 실제 탐색에 입력 능력치로 계산한 결정적 작업자 결과를 제공함.
 - 스크린샷: `local/shots/overwrite_desktop.png`, `local/shots/overwrite_mobile.png`. 최종 전체 검사 결과는 아래에 덧붙임. `battlesim/`은 수정하지 않았음. 커밋·푸시·HANDOFF 변경은 하지 않았음. 브랜치 추적 정보가 없어 pull은 중단됐고, 다른 폴더 수정 금지에 따라 비공개 자료는 읽기만 했음.
-- 최종 검증: `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data` 지정 후 요청한 `tools/run_tests.py --rebuild --e2e E:\AI_mk2\venv-pw\Scripts\python.exe`를 실행했음. 일반 119개·브라우저 46개 모두 통과했으며 실행기 집계는 **120 통과·0 실패**임. COSMO_TABLES·옆 journeyhelper 없음의 기존 건너뜀 2건은 유지됨. 로그는 `local/overwrite-final.log`임. 새 회귀의 결함 주입 11종(기록 3종·덮어쓰기/표시/시간 제한 8종)을 검출했음. 첫 전체 검사의 기믹 시험 실패는 Windows 편집 과정의 CRLF와 기존 함수 추출 정규식 때문이었으며, 원래 LF를 복구한 뒤 재검사했음. 최종 스크린샷은 이 재실행에서 생성했음. 엔진을 건드리지 않아 추가 golden 실행은 하지 않았음.
+- 최종 검증: `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data` 지정 후 요청한 `tools/run_tests.py --rebuild --e2e E:\AI_mk2\_env\venv-pw\Scripts\python.exe`를 실행했음. 일반 119개·브라우저 46개 모두 통과했으며 실행기 집계는 **120 통과·0 실패**임. COSMO_TABLES·옆 journeyhelper 없음의 기존 건너뜀 2건은 유지됨. 로그는 `local/overwrite-final.log`임. 새 회귀의 결함 주입 11종(기록 3종·덮어쓰기/표시/시간 제한 8종)을 검출했음. 첫 전체 검사의 기믹 시험 실패는 Windows 편집 과정의 CRLF와 기존 함수 추출 정규식 때문이었으며, 원래 LF를 복구한 뒤 재검사했음. 최종 스크린샷은 이 재실행에서 생성했음. 엔진을 건드리지 않아 추가 golden 실행은 하지 않았음.
 
 ## 2026-11-11 다 키운 계정 리뷰 반영
 
@@ -133,7 +133,7 @@ HANDOFF 남은 일 22·24. Claude 가 후보안(A1/A2, B1/B2, C1/C2/C3)을 먼�
 - 새 결함 주입 7종(칸별 혼합, 동률 교체, 부옵 추가, PICK 무시, 완료 뒤 기준 미갱신, 코스모 단계/완료 저장)을 격리 VM에서 각각 검출했음. 기존 덮어쓰기 결함 주입 8종도 통과했음. 브라우저 `test_assumed_growth`에서 실제 «이 팀 보기» 클릭 후 기준 변경을, `test_growth_stage23`에서 현재 계정만 속도를 저장하는 것을 추가 확인했음. 두 대상 브라우저 시험 모두 통과했음.
 - 나머지 비차단 판단: 육성 옵션·대상 변경에 따른 현재 계정 캐시 분할은 결과 정확성 결함이 아니라 재계산 비용이므로 이번 수정에서 보류했음. `growthPriority`·`GrowthGuide.save`의 화면 미호출은 위 방향 전환 절에 명시된 기록 호환 설계와 일치하므로 유지했음. 코스모 결과의 `sum`·`teams`는 실제 탐색 반환값과 시즌 브라우저 시험에서 확인했음. 실계정 배열 순서는 읽지 않았으며 합성 자료의 순열로 순서 독립성을 검사했음.
 - 지정 HEAD·작업 폴더 제한을 유지하기 위해 두 저장소의 pull은 하지 않았음. 비공개 자료는 읽기만 했고 계정 자료는 사용하지 않았음. 커밋·푸시·HANDOFF 및 엔진 변경은 없음. 전체 검증 기준선은 119 통과·0 실패였음.
-- 최종 검증: `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data` 지정 `python -X utf8 -I tools/run_tests.py --rebuild --e2e E:\AI_mk2\venv-pw\Scripts\python.exe`는 **121 통과·0 실패**, 종료 코드 0이었음. 일반 120개·브라우저 46개가 통과했음(실행기는 브라우저 묶음을 1개로 집계). 기존 환경 건너뜀 2건(COSMO_TABLES·옆 journeyhelper 없음)은 유지됨. 로그는 `local/overwrite-review-final.log`임. 전체 실행 중 신규 시험 자료의 부옵 이름·소스 레벨 누락을 보완하고, 지원 누락 0건 검사를 추가한 뒤 해당 JS 시험과 결함 주입 7종을 다시 통과했음. 화면 생성물은 재빌드했으며 `git diff --check`도 통과했음.
+- 최종 검증: `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data` 지정 `python -X utf8 -I tools/run_tests.py --rebuild --e2e E:\AI_mk2\_env\venv-pw\Scripts\python.exe`는 **121 통과·0 실패**, 종료 코드 0이었음. 일반 120개·브라우저 46개가 통과했음(실행기는 브라우저 묶음을 1개로 집계). 기존 환경 건너뜀 2건(COSMO_TABLES·옆 journeyhelper 없음)은 유지됨. 로그는 `local/overwrite-review-final.log`임. 전체 실행 중 신규 시험 자료의 부옵 이름·소스 레벨 누락을 보완하고, 지원 누락 0건 검사를 추가한 뒤 해당 JS 시험과 결함 주입 7종을 다시 통과했음. 화면 생성물은 재빌드했으며 `git diff --check`도 통과했음.
 
 ## 11/12 다음 2건 설계
 
@@ -150,7 +150,7 @@ HANDOFF 남은 일 22·24. Claude 가 후보안(A1/A2, B1/B2, C1/C2/C3)을 먼�
 - 보유 순위 뒤에 미보유를 별도 라벨로 구분하며 합쳐서 상위 5명만 펼침. 육성 설정 아래에 두어 결과 카드의 설명을 늘리지 않았음. 슬롯 계획과 순위 모두 다크 화면·짧은 칩을 유지함. 새로 고침은 현재 manifest·성장표·규칙으로 서명을 다시 만들고, 공유에서는 세션 메모리만 쓰며 내 정보 삭제 시 기록도 지움.
 - 합성 계정 단위 시험과 결함 주입 14종을 통과했음. 실제 작전 작업자 e2e에서 보조 카드 슬롯 칩·순위·새로 고침·공유 미저장·내 정보 삭제·390px을 확인했음. 시즌 e2e는 실제 탐색에 결정적 작업자 결과를 연결했음. 기준선은 120 통과·0 실패였음. 커밋·푸시·HANDOFF·엔진은 변경하지 않았음.
 - 첫 전체 검사는 일반 121개 통과, 브라우저의 기존 `test_myinfo_sim` 1건 실패였음. 순위 영역에 파티 스타일 `.party`를 재사용해 숨겨진 순위가 기존 시험의 첫 파티 선택자에 잡혔음. HEAD 원본 5파일을 브라우저 요청에서 대체한 같은 시험은 통과해 이번 변경의 회귀임을 확인했음(`local/next-head-check.log`). 순위를 일반 `.panel`로 바꾼 뒤 같은 시험도 통과했으며, 보조 카드 e2e에 선택자 충돌을 다시 주입하는 검사 1종을 추가했음.
-- 최종 `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data` 지정 `python -X utf8 -I tools/run_tests.py --rebuild --e2e E:\AI_mk2\venv-pw\Scripts\python.exe`는 **122 통과·0 실패**, 종료 코드 0이었음. 일반 121개·브라우저 46개 통과, 기존 COSMO_TABLES·옆 journeyhelper 없음 건너뜀 2건은 유지됨. 새 결함 주입은 단위 14종·브라우저 1종을 검출했음. 로그 `local/next-final.log`, 스크린샷 `local/shots/next_desktop.png`·`next_mobile.png`이며 모두 최종 실행에서 갱신했음. `git diff --check` 통과, 엔진 변경이 없어 외부 golden은 실행하지 않았음.
+- 최종 `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data` 지정 `python -X utf8 -I tools/run_tests.py --rebuild --e2e E:\AI_mk2\_env\venv-pw\Scripts\python.exe`는 **122 통과·0 실패**, 종료 코드 0이었음. 일반 121개·브라우저 46개 통과, 기존 COSMO_TABLES·옆 journeyhelper 없음 건너뜀 2건은 유지됨. 새 결함 주입은 단위 14종·브라우저 1종을 검출했음. 로그 `local/next-final.log`, 스크린샷 `local/shots/next_desktop.png`·`next_mobile.png`이며 모두 최종 실행에서 갱신했음. `git diff --check` 통과, 엔진 변경이 없어 외부 golden은 실행하지 않았음.
 
 ### 11/12 리뷰 5건 마무리
 

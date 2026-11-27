@@ -13,7 +13,7 @@
 설치/디컴파일 buildid 26752678, DLL 10개 불일치 0을 확인했음.
 allow-d2 브랜치에는 upstream이 없어 pull이 실패했음. 임의 병합하지 않았음.
 NKM·NKC·NT·ST는 비공개 `decompiled/`의 NKM·NKC·NKM.Templets·Star.Templets
-어셈블리 파일을 뜻함. T는 `E:/AI_mk2/rebuild_26752678/T`임.
+어셈블리 파일을 뜻함. T는 `E:/AI_mk2/_builds/26752678/rebuild/T`임.
 3월판 코드·계정 자료·공략 수치를 쓰지 않았음.
 
 ## 항목별 판정

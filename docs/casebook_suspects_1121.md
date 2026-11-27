@@ -11,7 +11,7 @@
 ## 자료
 
 - 클라: `STARSAVIOR_STATIC=E:/AI_mk2/starsavior-static-data`의 `decompiled/`(빌드 26752678). NKM = `NKM/NKM.decompiled.cs`, ST = `Star.Templets/Star.Templets.decompiled.cs`, NT = `NKM.Templets/NKM.Templets.decompiled.cs`. 3월판은 쓰지 않았음.
-- 표: `E:/AI_mk2/rebuild_26752678/T/CLIENT_*.json`, 조건 표는 `static-data/tables/Plain/SKILL_CONDITION_TEMPLET.json`(SC).
+- 표: `E:/AI_mk2/_builds/26752678/rebuild/T/CLIENT_*.json`, 조건 표는 `static-data/tables/Plain/SKILL_CONDITION_TEMPLET.json`(SC).
 - 엔진: 이 작업 트리 `battlesim/mc.py`(커밋 45cb764 기준 줄 번호).
 
 ## 1. 사례 14: 브레이크 스킬과 강인도 상성

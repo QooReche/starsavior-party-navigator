@@ -7,7 +7,7 @@ PC Steam 26752678, `STARSAVIOR_STATIC=E:/AI_mk2/starsavior-static-data`의
 `check_build.py`에서 설치본·디컴파일 DLL 10개 불일치 0을 확인했음.
 이 문서의 NKM·NT·ST·NKC는 그 저장소 `decompiled/<어셈블리>/<어셈블리>.decompiled.cs`임.
 NT는 NKM.Templets, ST는 Star.Templets를 줄인 이름임.
-표 근거는 `E:/AI_mk2/rebuild_26752678/T/CLIENT_*.json`임.
+표 근거는 `E:/AI_mk2/_builds/26752678/rebuild/T/CLIENT_*.json`임.
 3월판 코드는 사용하지 않았음. 계정 자료·비공개 표 원문은 넣지 않았음.
 
 HEAL·ORBITAL_ARRAY·ORBITAL_DOMAIN·ORBITAL_LEVEL_GROUP·SE_ORBITAL_ARRAY·DAMAGE·NOVA_BURST

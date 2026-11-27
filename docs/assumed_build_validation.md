@@ -3,7 +3,7 @@
 ## 2026-11-10 리뷰 3종 후속
 
 - 기준선 `d675cd0`: 일반 109 통과/0 실패. 소스 가상 슬롯·후보별 실패 격리·옛 형식 항목별 비교·조건 호환 기록과 모바일 화면을 고쳤음. 판정별 반영/기각과 클라 근거는 HANDOFF 심야 리뷰 절에 있음.
-- `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data` 지정 `tools/run_tests.py --rebuild --e2e E:\AI_mk2\venv-pw\Scripts\python.exe --timeout 1800`에서 브라우저 44건 모두 통과했음. 일반 한 건의 옛 레벨 0 거부 기대값을 새 계약에 맞춰 고친 뒤 `--rebuild` 일반 전체를 다시 실행해 110 통과/0 실패했음. 로그는 `%TEMP%/pn-review-final.log`·`pn-review-general-final.log`임. 기존 환경 건너뜀 2건은 그대로임.
+- `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data` 지정 `tools/run_tests.py --rebuild --e2e E:\AI_mk2\_env\venv-pw\Scripts\python.exe --timeout 1800`에서 브라우저 44건 모두 통과했음. 일반 한 건의 옛 레벨 0 거부 기대값을 새 계약에 맞춰 고친 뒤 `--rebuild` 일반 전체를 다시 실행해 110 통과/0 실패했음. 로그는 `%TEMP%/pn-review-final.log`·`pn-review-general-final.log`임. 기존 환경 건너뜀 2건은 그대로임.
 - 코드 blocking 3종·조건 혼합·슬롯 수/빈 칸·레벨 0 거부, 모바일 blocking 4종을 결함 주입으로 재현하고 실패를 확인했음. 실제 Pyodide에서 옛 형식의 비레벨 항목은 진행도 양수·100판 비교, 미지원 구원자는 개별 제외하고 슬롯 교환이 계속됨을 검사했음.
 - 이전 두 테마 색 구분 검증은 다크 전용 계약으로 바꿨음. 잘못된 light 속성 덮어쓰기를 제거하고 어떤 속성에서도 다크 대비를 유지함. 라벨 7.01:1·테두리 9.24:1·수치 표시 9.48:1, 점/대시·기호·글자를 병용함.
 - 기존 캡처 스크립트를 재사용해 `scratch/pn/shots2`에 기존 18상태와 옛 형식 가이드 1장, manifest를 저장했음. 가로 넘침·깨진 이미지·캡처 오류 0건. 접힌 모바일 전체 높이 3,897px이며 펼침 캡처는 나머지 명단과 실제 보유자의 항목별 기여까지 열었음.
@@ -18,7 +18,7 @@
 - `tests/guide_bundle_test.js --mutations`는 레벨/장비 묶음 누락, 음수 제거, 슬롯 추천 제거를 주입한 뒤 각각 실패하고 원복하면 통과했음. `tests/assumed_guide_test.js --mutations`의 생성·서명·shared 저장 방지 검사도 유지했음.
 - 실제 Pyodide e2e에서 카드 안 라벨·점선·두 테마의 다른 색·원래 값→보정 값 title·항목 접기·공유 payload 원본·shared 옵션/결과 미저장·옛 형식 슬롯 패널 숨김·쿨다운 칩을 확인했음. `PN_DISABLE_GUIDE_STYLE=1`은 borderStyle assertion, `PN_DISABLE_SLOT=1`은 swaps/runs assertion에서 실패했음. 잘못된 테스트 훅 실행 오류를 실패 감지 근거로 쓰지 않고, 훅을 고친 뒤 실제 assertion 실패를 확인했음.
 - 독립 리뷰 `ca1e271..129cad0`에서 콘텐츠별 점수 환경 누락, 새 편성 발견 효과를 슬롯 이득으로 오인, 개별 진단의 예산 독점을 지적받았음. 모두 반영했고 `129cad0..17a13ee` 재리뷰에서 해소 확인했음. 콘텐츠 가중치 변경 뒤 동일 후보 재생성·finally 복구, fixed200 공통 후보/동일 입력 결과, 4콘텐츠/8후보에서도 실제 교환 검증 수행을 회귀 검사했음. 마지막 `17a13ee..7ba02e6` 검토에서는 단일 항목 비교의 누락 여정 정보 보존·해당 회귀 시험에 추가 지적 없었음.
-- 최종 `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data` 지정 `python -X utf8 -I tools/run_tests.py --rebuild --e2e E:\AI_mk2\venv-pw\Scripts\python.exe --timeout 1800`은 **110 통과/0 실패**였음(`local/guide-final-all-v2.log`). 일반 109개 파일과 e2e 묶음 1개를 센 수이며 브라우저 43건 모두 통과했음. 환경 건너뜀은 기존 COSMO_TABLES·journeyhelper 2건임. 직전 전체 e2e에서 공유 링크의 옛 `ae` 필수 기대값만 실패했으며 새 계약으로 수정한 뒤 개별 시험과 위 전체 실행이 모두 통과했음.
+- 최종 `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data` 지정 `python -X utf8 -I tools/run_tests.py --rebuild --e2e E:\AI_mk2\_env\venv-pw\Scripts\python.exe --timeout 1800`은 **110 통과/0 실패**였음(`local/guide-final-all-v2.log`). 일반 109개 파일과 e2e 묶음 1개를 센 수이며 브라우저 43건 모두 통과했음. 환경 건너뜀은 기존 COSMO_TABLES·journeyhelper 2건임. 직전 전체 e2e에서 공유 링크의 옛 `ae` 필수 기대값만 실패했으며 새 계약으로 수정한 뒤 개별 시험과 위 전체 실행이 모두 통과했음.
 - 엔진·규칙·내 정보 미사용 경로·골든 기대값은 병합 기준에서 바꾸지 않았음. manifest `cb8ae2688e0b` 불변이며 `mc_cache_test.py`·`golden_check.py`가 통과했음. 별도로 `9f33827`의 `make_build`를 메모리에서 불러와 공개 57명×none/light/standard 171건을 대조했으며 정확 일치했음(합계 SHA256 `5b84b580a4dfafbc1d1bd6eab48789143a6893a162bf7b214e8383bab8458295`). 골든 `--write`를 실행하지 않았음.
 
 아래 실측은 모두 합성 계정이며 게임 계정 수치가 아님. PC의 다른 시험과 동시에 실행했으므로 성능 보장은 아님.

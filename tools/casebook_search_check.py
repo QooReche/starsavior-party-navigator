@@ -3,7 +3,7 @@
 기본은 공개 표준 육성·전체 보유(계정 자료 없음). 원시 결과는 무시되는 local/casebook_search/ 에 둠.
 --myinfo PATH 를 주면 사이트의 내 정보 경로(MyInfoReco.profile → final_stats, build none·stats_final; 코스모 fixed200,
 길드·작전·회랑 normal = 페이지가 길드 탐색에 쓰는 "op" 프로필)로 같은 검사를 돌림. 보유 명단·보유 브레이크 레벨만 씀.
-계정 결과는 저장소 밖 --out(기본 E:/AI_mk2/role-private/casebook_myinfo)에만 씀. 사례 구원자 미보유 사례는 «미보유로 제외».
+계정 결과는 저장소 밖 --out(기본 E:/AI_mk2/_private/role-private/casebook_myinfo)에만 씀. 사례 구원자 미보유 사례는 «미보유로 제외».
 
   python -X utf8 -I tools/casebook_search_check.py catalog
   python -X utf8 -I tools/casebook_search_check.py search cosmo1023|cosmo1022|guild [--workers 8]
@@ -30,7 +30,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 OUT = ROOT / 'local' / 'casebook_search'
-PRIVATE_OUT = Path('E:/AI_mk2/role-private/casebook_myinfo')
+PRIVATE_OUT = Path('E:/AI_mk2/_private/role-private/casebook_myinfo')
 # 내 정보 모드: 프로세스 풀 자식에게도 전달되도록 환경 변수로 둠(OUT 을 저장소 밖 비공개 폴더로 바꿈)
 MYINFO = os.environ.get('CASEBOOK_MYINFO') or ''
 if MYINFO:

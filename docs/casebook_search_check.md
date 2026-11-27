@@ -201,13 +201,13 @@ python -X utf8 -I tools/casebook_search_check.py search cosmo1022 [6] --workers 
 python -X utf8 -I tools/casebook_search_check.py search guild
 python -X utf8 -I tools/casebook_search_check.py eval --runs 400 --workers 12
 
-# 내 정보 기준(결과는 저장소 밖 --out, 기본 E:/AI_mk2/role-private/casebook_myinfo; 워커 최대 2)
+# 내 정보 기준(결과는 저장소 밖 --out, 기본 E:/AI_mk2/_private/role-private/casebook_myinfo; 워커 최대 2)
 M=<비공개 myinfo.json>
 python -X utf8 -I tools/casebook_search_check.py profile --myinfo $M
 python -X utf8 -I tools/casebook_search_check.py search cosmo1023 --myinfo $M --workers 2   # cosmo1022, guild, "cosmo1023 6" 도 같게
 python -X utf8 -I tools/casebook_search_check.py eval --runs 400 --workers 2 --myinfo $M
 
-# 사이트 실제 추천 경로(작전·회랑, 결과는 E:/AI_mk2/role-private/casebook_myinfo/site_reco)
+# 사이트 실제 추천 경로(작전·회랑, 결과는 E:/AI_mk2/_private/role-private/casebook_myinfo/site_reco)
 <venv-pw python> -X utf8 tools/stage_reco_check.py collect --myinfo $M   # PLAYWRIGHT_BROWSERS_PATH 필요
 python -X utf8 -I tools/stage_reco_check.py eval --workers 8
 python -X utf8 -I tools/stage_reco_check.py full --workers 8

@@ -25,9 +25,9 @@ art6.md의 art8 무손실·예외 한도 기록은 당시 경과이며 현재 �
 ```powershell
 node tests/gwen_lane_test.js
 python -X utf8 -I tools/run_tests.py gwen_art
-E:\AI_mk2\venv-pw\Scripts\python.exe -X utf8 tests/e2e/test_direct_gwen.py
-E:\AI_mk2\venv-pw\Scripts\python.exe -X utf8 tests/e2e/test_direct_gwen.py --video
-python -X utf8 -I tools/run_tests.py --e2e E:\AI_mk2\venv-pw\Scripts\python.exe
+E:\AI_mk2\_env\venv-pw\Scripts\python.exe -X utf8 tests/e2e/test_direct_gwen.py
+E:\AI_mk2\_env\venv-pw\Scripts\python.exe -X utf8 tests/e2e/test_direct_gwen.py --video
+python -X utf8 -I tools/run_tests.py --e2e E:\AI_mk2\_env\venv-pw\Scripts\python.exe
 ```
 
 새 E2E는 360/1280/1600px 실제 bounding box, 모드 복귀, 크기별 결과 그림·발표 1회, 클릭 3단계와 quiet 복원, reduced/숨김/화면 밖 정지, 중복 상태 문구, 실제 Pyodide 육성 결과를 검사함. 단위 변조 4개(반응 쿨다운·우선순위·reduced 이동·길 경계), notes 예외 복원, 실제 실행 overwrite 누락을 각각 실패로 검출했음. 실행 코드 변조는 응답 route 안에만 적용하므로 생산 파일을 바꾸지 않음.

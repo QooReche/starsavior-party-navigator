@@ -75,7 +75,7 @@
 
 ### 외부 golden
 
-지정 명령 `python -X utf8 E:\AI_mk2\accel-golden\golden.py E:\AI_mk2\wt-p1112 local\p1112.json` 실행. `accel-golden/base.json`과 비교해 **78건 실행 오류 0, legacy 39/39 일치, 기본 20/39 일치**임. 데이터 변경 때문에 허용하고 넘긴 legacy 차이는 최종적으로 **0건**임.
+지정 명령 `python -X utf8 E:\AI_mk2\_work\accel-golden\golden.py E:\AI_mk2\wt-p1112 local\p1112.json` 실행. `accel-golden/base.json`과 비교해 **78건 실행 오류 0, legacy 39/39 일치, 기본 20/39 일치**임. 데이터 변경 때문에 허용하고 넘긴 legacy 차이는 최종적으로 **0건**임.
 
 기본값 차이 19건은 다음과 같음. 공통 조건은 standard 육성, seed=3, 20판이며 계정 자료를 사용하지 않았음.
 
@@ -162,7 +162,7 @@ python -X utf8 -I tools/rules_stamp.py --ack guild_sim --reason "11/12 패치·a
 
 ```powershell
 $env:STARSAVIOR_STATIC='E:\AI_mk2\starsavior-static-data'
-python -X utf8 -I tools/run_tests.py --rebuild --e2e E:\AI_mk2\venv-pw\Scripts\python.exe
+python -X utf8 -I tools/run_tests.py --rebuild --e2e E:\AI_mk2\_env\venv-pw\Scripts\python.exe
 ```
 
 **2026-11-12 18:12 KST 완료: 실행기 집계 126 통과 / 0 실패**(일반 125개 + 브라우저 실행 1개, 브라우저 내부 48개 전부 통과). 기준선부터 있던 환경 미충족 2건(`COSMO_TABLES`, 옆 `journeyhelper` 없음)은 그대로 건너뛰었음. 로그: `local/p1112-stage2-final.log`, 브라우저 확인 자료: `local/shots/`.
@@ -252,7 +252,7 @@ python -X utf8 -I tools/run_tests.py --rebuild --e2e E:\AI_mk2\venv-pw\Scripts\p
 최종 `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data` 지정 뒤 아래 명령을 순차 실행했음.
 
 ```powershell
-python -X utf8 -I tools/run_tests.py --rebuild --e2e E:\AI_mk2\venv-pw\Scripts\python.exe
+python -X utf8 -I tools/run_tests.py --rebuild --e2e E:\AI_mk2\_env\venv-pw\Scripts\python.exe
 ```
 
 **127 통과 / 0 실패**(일반 126개 + 전체 브라우저 실행 1개)였음. 기준선과 같은 환경 건너뜀 2건은 `COSMO_TABLES` 없음(CLIENT_ 접두 별도 추출본 필요)·옆 journeyhelper 없음임. 로그는 `local/dc-final.log`, 브라우저 확인 자료는 `local/shots/`임. 최종 생성물 상태에서도 지정 golden 명령을 다시 실행해 legacy 39건 일치·default 차이 6건·오류 0건을 확인했음.
@@ -272,4 +272,4 @@ python -X utf8 -I tools/run_tests.py --rebuild --e2e E:\AI_mk2\venv-pw\Scripts\p
 
 지정 MC golden 명령을 main과 작업 폴더에 순차 실행해 **78/78 일치·오류 0건** 확인했음(`local/dc2_main.json`, `local/dc2.json`). 현재 공개 입력의 기대값 지표 **67개·150팀·10개 스테이지 팀**도 기본 net 및 reduce 양쪽 모두 main과 일치했음(`local/dc2_ev_*.json`). 실제 비교 결과가 바뀌지 않아 빠른 계산 재보정은 생략했으며 `calib.acc`는 **0.923→0.923**임. 길방 표는 시즌4 종료·미오픈 사유로 ack했고 새 시즌 자료 반영 때 재생성함.
 
-수정 전 기준선 **126 통과 / 0 실패**(`local/dc2-baseline.log`). `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data` 지정 후 요청한 `run_tests.py --rebuild --e2e E:\AI_mk2\venv-pw\Scripts\python.exe`는 **127 통과 / 0 실패**였음(`local/dc2-full.log`). 환경 건너뜀 2건은 기준선과 같은 `COSMO_TABLES` 없음·옆 journeyhelper 없음임. `sim/manifest.json`을 재생성했고 `index.html`은 내용 불변. HANDOFF·quick·guild_sim·기존 골든 파일 불변, `git diff --check` 통과했음.
+수정 전 기준선 **126 통과 / 0 실패**(`local/dc2-baseline.log`). `STARSAVIOR_STATIC=E:\AI_mk2\starsavior-static-data` 지정 후 요청한 `run_tests.py --rebuild --e2e E:\AI_mk2\_env\venv-pw\Scripts\python.exe`는 **127 통과 / 0 실패**였음(`local/dc2-full.log`). 환경 건너뜀 2건은 기준선과 같은 `COSMO_TABLES` 없음·옆 journeyhelper 없음임. `sim/manifest.json`을 재생성했고 `index.html`은 내용 불변. HANDOFF·quick·guild_sim·기존 골든 파일 불변, `git diff --check` 통과했음.

@@ -55,7 +55,7 @@
 - `node tests/myinfo_import_test.js`: 통과, 로스터 56명/UID 56개.
 - `python -X utf8 -I build_party_html.py index.html`: 정상, 약 1,596KB.
 - `git diff --check`: 통과.
-- Playwright: `E:/AI_mk2/venv-pw/Scripts/python.exe -X utf8 -I tests/e2e/test_page.py --shots E:/AI_mk2/pn-myinfo/local/shots ...` 및 전체 실행 `python -X utf8 -I tests/run_workspace_test.py tests/e2e/test_page.py --shots E:/AI_mk2/pn-myinfo/local/shots` 모두 드라이버 시작 전 `WinError 5`. **기존 18개 + 추가 3개 = 21개 미실행. 새 e2e의 실패 주입도 미실행.**
+- Playwright: `E:/AI_mk2/_env/venv-pw/Scripts/python.exe -X utf8 -I tests/e2e/test_page.py --shots E:/AI_mk2/pn-myinfo/local/shots ...` 및 전체 실행 `python -X utf8 -I tests/run_workspace_test.py tests/e2e/test_page.py --shots E:/AI_mk2/pn-myinfo/local/shots` 모두 드라이버 시작 전 `WinError 5`. **기존 18개 + 추가 3개 = 21개 미실행. 새 e2e의 실패 주입도 미실행.**
 
 대신 ego-browser의 실제 로컬 Chromium 화면에서 확인한 결과(Playwright 전부 통과를 대체하지 않음):
 
