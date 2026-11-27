@@ -1,3 +1,12 @@
+## 2026-11-27 — 코스모 틀 전환 후 e2e 경로 정리
+
+- `test_patch1126_direct`·`test_guild_sets_hidden`의 EX 레벨·지원 선택을 `#direct-guild-controls`로 옮겼음. 실제 시뮬·저장·공유·선택 효과 0 검사는 유지했음.
+- `test_guild_search`는 콘텐츠를 열기 전에 legacy 프리셋을 지정함. `test_guild_defense`는 daily의 옛 추천 칸 삭제를 확인하고, 남아 있는 legacy 경로에서 기존 추천·단계·점수 검사를 계속함.
+- `test_guild_season_rollover`는 숨긴 패널 대신 공통 시즌 칩·안내의 종료 경계 갱신과 탐색 차단을 검사함. `test_ux_step3`는 기준표·도움말을 legacy에서, 참고 접힘·EX 선택을 daily 직접 편성에서 검사함. 설계 §1-4에 참고 접힘의 직접 편성 전용 표시가 명시돼 있어 화면 코드는 바꾸지 않았고 index 재생성도 없었음.
+- 수정 대상과 인접 선택 e2e 8건 통과. 전체 `tests/e2e/test_page.py`는 1회 실행해 **77통과·1실패**. 실패는 `test_ux_step12`의 기존 그림 로딩 15초 대기 지점임. main `5c3fe4b`와 브랜치에서 이 시험만 각각 1회 실행한 결과는 모두 통과했음. 간헐 실패를 기록하고 해당 시험·그림 코드는 수정하지 않았음.
+- e2e는 `PLAYWRIGHT_BROWSERS_PATH=%LOCALAPPDATA%\ms-playwright`를 지정했고, 선택·전체 실행에는 `PN_E2E_LOW_MEMORY=1`을 사용했음. Node `tests/*.js`는 `guild_native_worker_test.js`를 제외하고 1회 순차 실행해 **104통과·0실패**. 동결 시험은 무수정 통과했음.
+- 원문: `local/e2e-fix/{main-step12,branch-step12,targeted,full}/e2e-progress.log`, node 파일별 로그와 `local/e2e-fix/node/results.json`. 기대값 완화·제한 시간 연장·push 없음.
+
 ## 11/27 길드 오늘 편성 찾기 — 코스모 공통 틀
 
 - 첫 팀은 축소 상태에서도 자리·리더를 비교함. 닫힌 날 상한에 걸리는 계정은 조건 후보·풀 축소가 먼저 적용될 수 있음. 1팀에서 줄지 않는 자리 비교 축소는 기록하지 않음.
