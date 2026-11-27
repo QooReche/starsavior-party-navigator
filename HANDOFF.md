@@ -147,8 +147,6 @@
 
 30. **코스모 삼중 순위 대조**: 정답 편성을 특정할 수 있는 원본 결과 rows와 해당 실행의 2단계 후보 목록 대조가 남았음. 합계만으로 구성이나 누락 원인을 추정하지 않음. 후보 안의 상위 삼중 확정과 최종 난이도·브레이크 재평가 순위는 별개로 확인함. 계정 기반 자료·수치는 비공개 작업 폴더에만 둠.
 
-31. **길드 보관 시뮬 파일 해시**: main `efe75e5`의 30111 보관 자산 해시는 CRLF 바이트 기준(`f78476b7…`)인데 `data/guild_seasons/30111/guild_sim.json`은 LF(`be634199…`)임. `guild_defense.sim_payload`가 표를 제외해 `guild_defense_test.py::test_built_page_is_current`가 실패함. 장비 작업에서는 길드 파일 수정 금지 범위에 따라 해시·기존 `index.html`을 유지했음. 보관 해시를 Git 파일 기준으로 바로잡고 정의 버전·현재 사본·HTML 일치를 확인해야 함.
-
 ## 환경·주의
 
 - 회사 PC는 공개 저장소와 `<workspace>/starsavior-static-data`를 함께 pull하기로 함. 추출 도구 작업이면 `starsavior-packet-ref`도 확인.
