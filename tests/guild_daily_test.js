@@ -21,11 +21,11 @@ function score(t,{weak=false,move=false}={}){
   return (g.step===7?(weak?400:5000):900)+(block?100:0)+(g.support==='s0'?30:0)+
     (t.options.break_skill?15:0)+(move&&leader===t.party.units.map(u=>u.key).sort().at(-1)?300:0)+(g.level===1?10:0);
 }
-async function scenario({daily=Daily,count=8,follows=0,stopRound=0,weak=false,move=false,settings,setup,stop,stopWhen,staleAt,timeOutStage,clock,scoreFn,viaFn,growth=false,day='2026-11-26T05:00:00+09:00'}={}){
+async function scenario({daily=Daily,count=8,follows=0,stopRound=0,weak=false,move=false,settings,setup,stop,stopWhen,staleAt,timeOutStage,clock,scoreFn,viaFn,growth=false,secondsPerGame=.0001,day='2026-11-26T05:00:00+09:00'}={}){
   scenarioCount++;
   const f=fixture(count);settings?.(f.S);setup?.(f);const trace=[],phases=[],plans=[],life={active:0,max:0,created:0};
   let round=0,phase=0,label='',partial=false,invalid=false,handle,fakeNow=0;
-  const cx={...f,nowMs:Date.parse(day),tiers:[],breaks:[{name:'synthetic',level:1}],workers:1,secondsPerGame:.0001,stage:'guild/test/7단계',base:'',clock,
+  const cx={...f,nowMs:Date.parse(day),tiers:[],breaks:[{name:'synthetic',level:1}],workers:1,secondsPerGame,stage:'guild/test/7단계',base:'',clock,
     growthResults:growth?structuredClone(f.results):undefined,stale:()=>invalid,...(timeOutStage?{clock:()=>fakeNow}:{}),
     onPlan:p=>plans.push(p),onPhase:(name,total,meta)=>{phase=meta.policyStage;label=name;phases.push({label,total,...meta});
       assert(meta.stage<plans.at(-1).stages.length);assert.equal(plans.at(-1).stages[meta.stage].games,meta.games);},
