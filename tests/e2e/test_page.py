@@ -2973,7 +2973,14 @@ def test_ux_step12(browser, ctx):
             assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), state
             # 그웬 그림은 실제로 보일 때까지 주소(src)를 받지 않는다(닫힌 서랍·숨긴 탭). 주소가 있거나 보이는 그림만 깨졌는지 본다
             # 위 스크롤의 IntersectionObserver가 정지/움직임 그림을 교체한 뒤의 로딩도 기다린다.
-            page.wait_for_function("[...document.images].filter(i=>i.getBoundingClientRect().width&&(i.hasAttribute('src')||i.checkVisibility({visibilityProperty:true}))).every(i=>i.complete&&i.naturalWidth>0)", timeout=15000)
+            broken = "[...document.images].filter(i=>i.getBoundingClientRect().width&&(i.hasAttribute('src')||i.checkVisibility({visibilityProperty:true}))).filter(i=>!(i.complete&&i.naturalWidth>0))"
+            try:
+                page.wait_for_function(f"{broken}.length===0", timeout=15000)
+            except Exception:
+                # 간헐 실패(전체 실행 부하 때만) 원인 추적용: 어떤 그림이 왜 안 받아졌는지 남김
+                bad = page.evaluate(f'''() => {broken}.map(i=>{{const r=i.getBoundingClientRect();return {{src:i.getAttribute('src'),art:i.dataset.gwenArt||null,
+                  cls:i.className,complete:i.complete,nw:i.naturalWidth,top:Math.round(r.top),w:Math.round(r.width),inView:r.bottom>0&&r.top<innerHeight}}}})''')
+                raise AssertionError(f'{state} {suffix}: 그림 로딩 안 됨 {bad}')
             compact_layout(state)
             if state == 'result':
                 card_audit()
