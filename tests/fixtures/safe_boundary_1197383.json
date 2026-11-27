@@ -1,0 +1,324 @@
+{
+  "commit": "1197383",
+  "generator": "CPython 3.12.1 32-bit (hash width 32)",
+  "inputs": [
+    {
+      "name": "revive-sun",
+      "party": {
+        "units": [
+          "elisa",
+          "wedding-epindel",
+          "bunny-charlotte",
+          "cristelle"
+        ],
+        "leader": 0
+      },
+      "encounter": {
+        "stage": "clo/태양 회랑/FLOOR 250"
+      },
+      "seed": 3,
+      "requires": [
+        "revive",
+        "speed_expired"
+      ]
+    },
+    {
+      "name": "revive-moon",
+      "party": {
+        "units": [
+          "elisa",
+          "wedding-epindel",
+          "bunny-charlotte",
+          "cristelle"
+        ],
+        "leader": 0
+      },
+      "encounter": {
+        "stage": "clo/달 회랑/FLOOR 250"
+      },
+      "seed": 3,
+      "requires": [
+        "revive",
+        "speed_expired"
+      ]
+    },
+    {
+      "name": "zero-mogulus-2",
+      "party": {
+        "units": [
+          "carmen",
+          "elisa",
+          "frey",
+          "serpang"
+        ],
+        "leader": 0
+      },
+      "encounter": {
+        "stage": "cosmo/불사왕 모굴루스/불사왕 모굴루스 2단계"
+      },
+      "seed": 3,
+      "requires": [
+        "speed_zero",
+        "speed_fixed_zero",
+        "speed_expired"
+      ]
+    },
+    {
+      "name": "zero-mogulus-3",
+      "party": {
+        "units": [
+          "wedding-epindel",
+          "white-pearl-luna",
+          "wedding-carmen",
+          "cristelle"
+        ],
+        "leader": 0
+      },
+      "encounter": {
+        "stage": "cosmo/불사왕 모굴루스/불사왕 모굴루스 3단계"
+      },
+      "seed": 3,
+      "requires": [
+        "speed_zero",
+        "speed_fixed_zero",
+        "speed_expired"
+      ]
+    },
+    {
+      "name": "sudden-sun",
+      "party": {
+        "units": [
+          "carmen",
+          "elisa",
+          "frey",
+          "serpang"
+        ],
+        "leader": 0
+      },
+      "encounter": {
+        "stage": "clo/태양 회랑/FLOOR 230"
+      },
+      "seed": 3,
+      "requires": [
+        "sudden_transition",
+        "action_blocked",
+        "speed_expired"
+      ]
+    },
+    {
+      "name": "sudden-moon",
+      "party": {
+        "units": [
+          "carmen",
+          "elisa",
+          "frey",
+          "serpang"
+        ],
+        "leader": 0
+      },
+      "encounter": {
+        "stage": "clo/달 회랑/FLOOR 230"
+      },
+      "seed": 3,
+      "requires": [
+        "sudden_transition",
+        "action_blocked",
+        "speed_expired"
+      ]
+    }
+  ],
+  "cases": {
+    "revive-sun": {
+      "sha256": "3c9d59e8f3aac9a7d1f857938798c4dd54edfd389dae4224e34e67aadc5bddf0",
+      "raw": [
+        [
+          "wipe",
+          null,
+          null,
+          0.6019937275092951
+        ]
+      ],
+      "coverage": {
+        "waves": 2,
+        "summons": 0,
+        "actions": 31,
+        "progress": 0.6019937275092951,
+        "via": {
+          "trigger": 2
+        },
+        "state": "59c09adc439973b1c44f18f3034203392400a91176c2bec951668fc2d17d7eae",
+        "events": {
+          "revive": 1,
+          "speed_zero": 0,
+          "speed_fixed_zero": 0,
+          "action_blocked": 0,
+          "speed_expired": 3,
+          "sudden_transition": 0
+        },
+        "expired_effects": {
+          "속도 증가": 2,
+          "징벌 집행(해제불가)": 1
+        }
+      }
+    },
+    "revive-moon": {
+      "sha256": "0ed47625035844e33b22776ce91e1cb582b42fb633d8832da639c6d6d93edb5d",
+      "raw": [
+        [
+          "wipe",
+          null,
+          null,
+          0.5035965202421325
+        ]
+      ],
+      "coverage": {
+        "waves": 2,
+        "summons": 0,
+        "actions": 25,
+        "progress": 0.5035965202421325,
+        "via": {
+          "trigger": 1
+        },
+        "state": "d8db67bb70f1407880686ea09471e71184436533b975ded9e01a506c1d5f4dfc",
+        "events": {
+          "revive": 1,
+          "speed_zero": 0,
+          "speed_fixed_zero": 0,
+          "action_blocked": 0,
+          "speed_expired": 3,
+          "sudden_transition": 0
+        },
+        "expired_effects": {
+          "속도 증가": 3
+        }
+      }
+    },
+    "zero-mogulus-2": {
+      "sha256": "46235a7d274b6c019a5f024c08da14ed15c9d59fe4ab9a65cb1ad413c5c035c7",
+      "raw": [
+        [
+          "clear",
+          7.492372187486443,
+          49,
+          1.0
+        ]
+      ],
+      "coverage": {
+        "waves": 1,
+        "summons": 0,
+        "actions": 49,
+        "progress": 1.0,
+        "via": {},
+        "state": "8fa60b0b469f8b32dd6550d5520f7e2eaa7e6d83ac3621f4479eb41be0dfddd8",
+        "events": {
+          "revive": 0,
+          "speed_zero": 28,
+          "speed_fixed_zero": 28,
+          "action_blocked": 0,
+          "speed_expired": 16,
+          "sudden_transition": 0
+        },
+        "expired_effects": {
+          "속도 증가": 4,
+          "몰락한 사념(해제불가)": 12
+        }
+      }
+    },
+    "zero-mogulus-3": {
+      "sha256": "70abe947d7fa61a006612a97966f224d13bbf955684da186583d89c6d15a24ab",
+      "raw": [
+        [
+          "wipe",
+          null,
+          null,
+          0.281365
+        ]
+      ],
+      "coverage": {
+        "waves": 1,
+        "summons": 0,
+        "actions": 43,
+        "progress": 0.281365,
+        "via": {
+          "trigger": 2,
+          "reaction": 2
+        },
+        "state": "c410a5f1cd1d1e0f6fc0b43466d4d1f6ef030b097d3f23e1a4db229b22b82224",
+        "events": {
+          "revive": 0,
+          "speed_zero": 21,
+          "speed_fixed_zero": 21,
+          "action_blocked": 0,
+          "speed_expired": 13,
+          "sudden_transition": 0
+        },
+        "expired_effects": {
+          "몰락한 사념(해제불가)": 8,
+          "속도 증가": 5
+        }
+      }
+    },
+    "sudden-sun": {
+      "sha256": "15095d5591aeae12d740e21faf20c91096038220832ec603df14cfb3e8753eff",
+      "raw": [
+        [
+          "wipe",
+          null,
+          null,
+          0.7405699599365031
+        ]
+      ],
+      "coverage": {
+        "waves": 2,
+        "summons": 0,
+        "actions": 231,
+        "progress": 0.7405699599365031,
+        "via": {},
+        "state": "de7a3eadaff08cecab205f12513b9daecbbbab86173c94e2d0c1f356073228bd",
+        "events": {
+          "revive": 1,
+          "speed_zero": 0,
+          "speed_fixed_zero": 0,
+          "action_blocked": 5,
+          "speed_expired": 4,
+          "sudden_transition": 6
+        },
+        "expired_effects": {
+          "속도 감소": 2,
+          "속도 증가": 2
+        }
+      }
+    },
+    "sudden-moon": {
+      "sha256": "7dc5301dbbebd9550be042f958d5a3cad2181265c106c48289ece51b2951e3e9",
+      "raw": [
+        [
+          "wipe",
+          null,
+          null,
+          0.7130124103462535
+        ]
+      ],
+      "coverage": {
+        "waves": 2,
+        "summons": 0,
+        "actions": 222,
+        "progress": 0.7130124103462535,
+        "via": {},
+        "state": "55a4fc780c250e3e8282bdd979d8c520cffb85688b31e6f6fe3fa5997706e8df",
+        "events": {
+          "revive": 0,
+          "speed_zero": 0,
+          "speed_fixed_zero": 0,
+          "action_blocked": 6,
+          "speed_expired": 4,
+          "sudden_transition": 6
+        },
+        "expired_effects": {
+          "속도 증가": 2,
+          "속도 감소": 2
+        }
+      }
+    }
+  }
+}
