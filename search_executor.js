@@ -117,6 +117,22 @@ function watchWorkers(ws,limit,live,stop,env={}){
       close() { if (closed) return; closed = true; ws.forEach(w => { w.onmessage = () => {}; w.onerror = () => {}; w.terminate(); }); }
     };
   }
+  // Session lifetime is shared; cache contents and version identity belong to callers.
+  function createSession(makeWorker=createWorker,beforeCreateWorker){
+    const newPool=()=>{
+      const pool=workerPool(()=>{beforeCreateWorker?.();return makeWorker();}),close=pool.close;
+      pool.close=()=>{pool.closed=true;close();};return pool;
+    };
+    return {pool:newPool(),caches:new Map(),closed:false,active:false,
+      reset(){this.caches.clear();this.signature=null;},
+      resume(version){
+        if(this.closed)throw Error('찾기 세션이 끝났음. 다시 찾기 필요');
+        if(this.version!==undefined&&this.version!==version){this.pool.close();this.reset();}
+        this.version=version;
+        if(this.pool.closed)this.pool=newPool();
+      },
+      close(){this.pool.close();this.caches.clear();this.closed=true;this.active=false;}};
+  }
   function runPhase({makeWorker, pool, jobs, workers, runs, seed, stage, base, onProgress, chunk, options, onResult, project=x=>x, watch={}}) {
     const resources=pool||workerPool(makeWorker);
     const dyn = chunk > 0;
@@ -255,6 +271,6 @@ function timedWorker(env){
  // 묶음 크기(훑기·예선): 코스모 식 min(50, ceil(팀 수/(작업자×40))) — 작업자마다 40묶음 이상 남겨 끝이 고르게. 8개·10,626팀이면 34팀, 120팀이면 1팀(지금과 같음)
  const chunkSize=(teams,workers)=>Math.max(1,Math.min(50,Math.ceil(teams/(Math.max(1,workers)*40))));
  const PAINT_MS=200;      // 훑기·예선 진행 표시 갱신 간격(ms, throttle)
- const api={createWorker,planStages,shared,split,workerPool,runPhase,etaNew,timedWorker,throttle,chunkSize,PAINT_MS};
+ const api={createWorker,createSession,planStages,shared,split,workerPool,runPhase,etaNew,timedWorker,throttle,chunkSize,PAINT_MS};
  if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.SearchExecutor=api;
 })(typeof window!=='undefined'?window:globalThis);

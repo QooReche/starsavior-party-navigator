@@ -6,7 +6,7 @@
   const GS=dep('guild_search.js','GuildSearch'),V=dep('guild_view.js','GuildView');
   const CS=dep('cosmo_search.js','CosmoSearch');
   const P=dep('party_placement.js','PartyPlacement'),PS=dep('placement_search.js','PlacementSearch');
-  const E=dep('search_executor.js','SearchExecutor');
+  const E=dep('search_executor.js','SearchExecutor'),SS=dep('score_search.js','ScoreSearch');
   const names=['능력치 계산','전체 조합 훑기','후보 정밀','스테이지·별의 도전·지원 비교','남은 지원 배정','결선·브레이크','자리·리더 비교'];
   const clone=x=>JSON.parse(JSON.stringify(x)),unique=xs=>[...new Map(xs.map(j=>[j.key,j])).values()];
   const compare=(a,b)=>b.score-a.score||b.mean-a.mean||a.id.localeCompare(b.id);
@@ -19,21 +19,7 @@
     return {...cx,roster:cx.roster.filter(r=>!units.has(r.key)),
       S:{...cx.S,final:{...cx.S.final,supports:cx.S.final.supports.filter(s=>!supports.has(s))}}};
   }
-  function createSession(makeWorker){
-    const newPool=()=>{
-      const pool=GS.workerPool(makeWorker),close=pool.close;
-      pool.close=()=>{pool.closed=true;close();};return pool;
-    };
-    const session={pool:newPool(),caches:new Map(),closed:false,
-      reset(){this.caches.clear();this.signature=null;},
-      resume(version){
-        if(this.version!==undefined&&this.version!==version){this.pool.close();this.reset();}
-        this.version=version;
-        if(this.pool.closed)this.pool=newPool();
-      },
-      close(){this.pool.close();this.caches.clear();this.closed=true;}};
-    return session;
-  }
+  const createSession=E.createSession;
   function inputSignature(cx,day){
     return JSON.stringify(['guild-follow-v1',cx.G.season.id,cx.G.dataVersion,day.date,cx.S,
       cx.tiers||[],cx.breaks||[],cx.roster,cx.results,cx.growthResults||null]);
@@ -231,13 +217,12 @@
         check();
         // jobKey omits stats. Share only an identical worker request, including
         // the exact seed interval and merge input; never substitute a longer run.
-        const battleKeys=shared.battles?new Map(batch.map(j=>[j.key,JSON.stringify([
-          cx.base,cx.stage,D.seed,n,j.party,j.options])])):null;
+        const battles=shared.battles?SS.battleCache(shared.battles,{base:cx.base,stage:cx.stage,seed:D.seed,runs:n}):null;
         const old=new Map(batch.map(j=>[j.key,cache.get(j.key)]));
         function saveOne(j,r){
           if(r.n!==runs||r.progs?.length!==runs||typeof r.raw!=='string'||!Number.isFinite(r.prog))throw Error('길드 판별 결과가 누락됨');
           // Keep the worker's interval via before applying this pass's weighted rate.
-          if(battleKeys&&pass===0)shared.battles.set(battleKeys.get(j.key),{...r});
+          if(battles&&pass===0)battles.set(j,r);
           const prev=old.get(j.key);
           // web.merge_summary carries scores/raw exactly; via describes only the
           // appended games, so preserve its weighted rate for coop filtering.
@@ -246,7 +231,7 @@
         }
         function save(res){for(const j of batch){const r=res[j.key];if(r)saveOne(j,r);}}
         const reused=[],todo=batch.filter(j=>{
-          const hit=pass>0&&battleKeys&&shared.battles.get(battleKeys.get(j.key));
+          const hit=pass>0&&battles&&battles.get(j);
           if(!hit)return true;reused.push([j,{...hit}]);return false;
         });
         const record={stage,name:label,jobs:batch.length,done:0,runs:n,seed:D.seed,complete:false};hist.push(record);

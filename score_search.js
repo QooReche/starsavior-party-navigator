@@ -29,6 +29,15 @@
     if(missing.length)Object.assign(results,await run(missing));
     return missing.length;
   }
+  // Candidate IDs omit combat stats. Share only a complete worker input, with
+  // the same rules, seed interval and raw merge input. Callers own cache lifetime.
+  function battleCache(map,{base,stage,seed,runs,options={build:'standard',rules_override:{power_penalty:'model'}}}){
+    const key=j=>JSON.stringify([base,stage,seed,runs,options,j.party,j.options]);
+    return {
+      get(j){const hit=map.get(key(j));return hit?{...hit}:undefined;},
+      set(j,result){map.set(key(j),{...result});}
+    };
+  }
   function expandedSettings(S){const c=S.learned,f=c.fallbackMultiplier;return {...S,learned:{...c,K:c.K*f,M:c.M*f,A:c.A*f}};}
   // Sampling order and rescue/expansion remain adapter policy; this summarizes both strata.
   function placementAudit({sampled,boundary,random,ranked,id,value,edge}){
@@ -37,6 +46,6 @@
     return {misses,summary:{sampled:sampled.length,misses:misses.length,rate:sampled.length?misses.length/sampled.length:0,
       boundarySampled:boundary.length,randomSampled:random.length,randomMisses:random.filter(r=>found.has(id(r))).length}};
   }
-  const api={compareBy,descending,goal,guildRank,cosmoRank,recoRank,random,reservoir,topRows,fitScreen,evaluateMissing,expandedSettings,placementAudit};
+  const api={compareBy,descending,goal,guildRank,cosmoRank,recoRank,random,reservoir,topRows,fitScreen,evaluateMissing,battleCache,expandedSettings,placementAudit};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.ScoreSearch=api;
 })(typeof window!=='undefined'?window:globalThis);
