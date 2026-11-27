@@ -19,6 +19,12 @@ from .starsavior.data import SRC
 MISSING = object()
 _CACHE = {}
 _DERIVED = []
+_GENERATION = 0
+
+
+def generation():
+    """Identity of the currently loaded data; clear() starts a new generation."""
+    return _GENERATION
 
 
 def path(name, src=SRC):
@@ -64,6 +70,8 @@ def cached(fn):
 
 
 def clear():
+    global _GENERATION
+    _GENERATION += 1
     _CACHE.clear()
     for c in _DERIVED:
         c.cache_clear()

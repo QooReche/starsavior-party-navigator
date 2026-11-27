@@ -44,6 +44,7 @@ import random
 import statistics
 import time
 import json
+import copy
 from collections import OrderedDict, defaultdict
 
 from . import datafile
@@ -188,8 +189,11 @@ def _norm_party_raw(party_spec, db, mode, build=None, mc=None):
 
 
 def _norm_encounter(enc):
-    """-> (waves[[def]], turn_limit, fx_props, fx_unknown, stage_meta). 코스모·길방 시즌 전투만 입력(JSON)별로 캐시(보스·난이도·세트 조합뿐이라 키가 적다)."""
-    if not _cache_on() or not isinstance(enc, dict) or not ('cosmo_raid' in enc or 'guild' in enc):
+    """Bounded prepared encounters, keyed by the complete input and loaded data generation.
+
+    Definitions are read-only; Unit copies enemy stats/passives before battle mutation.
+    """
+    if not _cache_on() or not isinstance(enc, dict) or not any(k in enc for k in ('cosmo_raid', 'guild', 'stage')):
         return _norm_encounter_raw(enc)
     try:
         k = json.dumps(enc, sort_keys=True, ensure_ascii=False)
@@ -201,11 +205,14 @@ def _norm_encounter(enc):
     if 'guild' in enc:
         from .starsavior.guild import identity
         k += '|' + identity(enc['guild'] or {})
+    k = (datafile.generation(), k)
     hit = _ENC_CACHE.get(k)
     if hit is None:
         hit = _norm_encounter_raw(enc)
         _ENC_CACHE.put(k, hit)
     waves, turn_limit, fx, unknown, meta = hit
+    if 'stage' in enc and 'guild' not in enc and 'cosmo_raid' not in enc:
+        return [list(w) for w in waves], turn_limit, copy.deepcopy(fx), list(unknown), copy.deepcopy(meta)
     return [list(w) for w in waves], turn_limit, (dict(fx) if isinstance(fx, dict) else fx), unknown, dict(meta)
 
 
