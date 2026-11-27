@@ -35,6 +35,26 @@ FORCE_BUFF_NAMES = frozenset(datafile.load('buff_force'))
 IMMUNE_PASS_NAMES = frozenset(datafile.load('buff_immune_pass'))
 
 
+def _tuple_hash32(items):
+    """브라우저(Pyodide, wasm32)의 hash(tuple of int) 값을 플랫폼과 무관하게 계산.
+    내장 hash() 는 Py_hash_t 폭(32/64비트)에 따라 값이 달라 PC(64비트) 결과가 사이트와 갈렸음(HANDOFF 34).
+    CPython 3.8+ tuplehash(xxHash 32비트 상수)·long_hash(모듈러 2**31-1) 그대로. 실제 32비트 CPython 3.12.1 과 대조: tests/hash32_test.py"""
+    m32, mod = 0xFFFFFFFF, (1 << 31) - 1
+    p1, p2, p5 = 2654435761, 2246822519, 374761393
+    acc = p5
+    for x in items:
+        h = abs(x) % mod
+        if x < 0:
+            h = -2 if h == 1 else -h
+        acc = (acc + (h & m32) * p2) & m32
+        acc = ((acc << 13) | (acc >> 19)) & m32
+        acc = (acc * p1) & m32
+    acc = (acc + (len(items) ^ (p5 ^ 3527539))) & m32
+    if acc == m32:
+        return 1546275796
+    return acc - (1 << 32) if acc >= 1 << 31 else acc
+
+
 @lru_cache(maxsize=4096)
 def base_name(name):
     """효과 이름에서 끝의 «(해제불가)»(사이 공백 허용) 꼬리표를 떼고 양끝 공백을 지운 이름 — 이름표 조회의 두 번째 열쇠."""
@@ -1333,7 +1353,7 @@ class Battle:
         if self._prio_rng is None:
             # 주 난수 상태를 읽기만 해서 씨앗을 만듦(소비하지 않음 — 다른 결정의 난수 흐름이 legacy 와 같게)
             st = self.rng.getstate()[1]
-            self._prio_rng = random.Random(hash(st[:8]) ^ 0x5EED1962)
+            self._prio_rng = random.Random(_tuple_hash32(st[:8]) ^ 0x5EED1962)
         return self._prio_rng.randrange(10000)
 
     def _tie_before(self, x, y, speeds=None):

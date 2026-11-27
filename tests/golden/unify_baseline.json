@@ -30,40 +30,40 @@
    "per_run": "976a13c4fd3bb48fea16",
    "prog": 1.0,
    "raw_runs": "ef05eeee3950811301ce",
-   "result": "7824d3490d59f2170adf",
-   "web": "679c6ed0f21abf2cce80"
+   "result": "da2b1e8b85468d9c057e",
+   "web": "c615a052be0ded5c15fe"
   },
   "clo_FLOOR100/M3/s1": {
    "clear": 1.0,
    "per_run": "eb2ce4af837e1dbf1e1f",
    "prog": 1.0,
    "raw_runs": "b379e2143c9f268f05d8",
-   "result": "dc1e318c1e8844a4fef9",
-   "web": "cd6c0ade37d0bedc2b7f"
+   "result": "5c11012df0c88829739f",
+   "web": "fcb5c4f474f933967006"
   },
   "clo_FLOOR100/M3/s2": {
    "clear": 1.0,
-   "per_run": "16aa9cf9e11236c2e367",
+   "per_run": "f191f42b0cfaee1b0dd0",
    "prog": 1.0,
-   "raw_runs": "df0c188107e4b55c28d4",
-   "result": "a5b25c3a005268b15204",
-   "web": "65563a808a27451095f1"
+   "raw_runs": "b13bce5db497b9d940b7",
+   "result": "08ea2dc1ef0df09a4d6c",
+   "web": "5d04d56d9eb8cdf9153f"
   },
   "clo_FLOOR100/M4/s1": {
    "clear": 1.0,
-   "per_run": "187aed373a4ebb8f73f8",
+   "per_run": "41fb0519bc0c374add7c",
    "prog": 1.0,
-   "raw_runs": "f8e5446bb65af9d61057",
-   "result": "826cfa7a8918bca87666",
-   "web": "d90491ad5b9bcdd0ed2e"
+   "raw_runs": "d97bd8e76c7bfddf72b4",
+   "result": "a7026a6f5d1a9d615f3b",
+   "web": "6154157a28e9a08d2426"
   },
   "clo_FLOOR100/M4/s2": {
    "clear": 1.0,
-   "per_run": "3cfda3ed6e344b9f322a",
+   "per_run": "0cffd06294ecc892e26c",
    "prog": 1.0,
-   "raw_runs": "21e754a61e699eccf8c3",
-   "result": "eb2f481f668c25adc198",
-   "web": "fbae21ab633154031697"
+   "raw_runs": "1c1108348b259d6cf938",
+   "result": "c28eb9746a695e1189f9",
+   "web": "910e213aea49049aa334"
   },
   "cosmo_길레1단계/M1/s1": {
    "clear": 1.0,
@@ -93,9 +93,9 @@
    "clear": 1.0,
    "per_run": "cf19b6c9fd3d218097a2",
    "prog": 1.0,
-   "raw_runs": "99d076fe1d44d1c78406",
-   "result": "3155c81958070ebcc5fe",
-   "web": "c58189a756e88baac981"
+   "raw_runs": "5cebd63702098e2a4bce",
+   "result": "66447e0565b503663cf5",
+   "web": "e543f11bd06d2d8ec937"
   },
   "cosmo_길레1단계/M3/s1": {
    "clear": 1.0,
@@ -115,19 +115,19 @@
   },
   "cosmo_길레1단계/M4/s1": {
    "clear": 1.0,
-   "per_run": "0541ab33931cf199b302",
+   "per_run": "7fa3c449bc336e7d67b8",
    "prog": 1.0,
-   "raw_runs": "d614949e7318ba8c7bdd",
-   "result": "b8e68f78cbfbb1239591",
-   "web": "0355eedb8941264d01a2"
+   "raw_runs": "34f2f2bb553c1a8758d7",
+   "result": "08c8b8fba946ccc20e7d",
+   "web": "bf5049e246da13a1e2d4"
   },
   "cosmo_길레1단계/M4/s2": {
    "clear": 1.0,
-   "per_run": "0541ab33931cf199b302",
+   "per_run": "cf96c50e6e616b9bf490",
    "prog": 1.0,
-   "raw_runs": "7e2bbd126b5386dcf1a7",
-   "result": "360ee89efef2558a5c14",
-   "web": "6b3550519169e781ba7c"
+   "raw_runs": "b4e592f9e5c978653bc9",
+   "result": "8cf010566ec5800918ef",
+   "web": "7036835ed8bab455a512"
   },
   "guild_fire_L1/G/s1": {
    "clear": 0.0,
@@ -148,18 +148,18 @@
   "guild_fire_L1/M2/s1": {
    "clear": 0.0,
    "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.5544,
-   "raw_runs": "c43381d72eff42bf09c3",
-   "result": "21360234292401ac2171",
-   "web": "dbbc223ef956d4fff281"
+   "prog": 0.5539,
+   "raw_runs": "177876c9a610f3865ee4",
+   "result": "7535d8c1d8bf36bdf2a2",
+   "web": "32e9c08b7dbe5b9aa052"
   },
   "guild_fire_L1/M2/s2": {
    "clear": 0.0,
    "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.5628,
-   "raw_runs": "3aa4b03feb5d5e2f69f0",
-   "result": "abb8f0011f8a2a6fe6ed",
-   "web": "162f776b1adc2f610331"
+   "prog": 0.5787,
+   "raw_runs": "2e73a63226b0010756fc",
+   "result": "f2934fd95be4ae517026",
+   "web": "e5172820c8fc1981a996"
   },
   "guild_fire_L1/M3/s1": {
    "clear": 0.0,
@@ -212,18 +212,18 @@
   "guild_focus_L1/M2/s1": {
    "clear": 0.0,
    "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.5616,
-   "raw_runs": "0e9569dfb367952d899e",
-   "result": "459eb81b69b86465f5e0",
-   "web": "83f274fe54624df6b6fc"
+   "prog": 0.5621,
+   "raw_runs": "fd0247cf209dbb7a0251",
+   "result": "509e79f1dd45c329608d",
+   "web": "8bded7fa4fcf939aa447"
   },
   "guild_focus_L1/M2/s2": {
    "clear": 0.0,
    "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.5638,
-   "raw_runs": "8e056d4ac646c3bca2e8",
-   "result": "9d6b8458f7d602b46ec8",
-   "web": "38f650b8048aed58e7af"
+   "prog": 0.5867,
+   "raw_runs": "d42c871053f265b81f9e",
+   "result": "994ddd1cff1107062663",
+   "web": "1289e3425a507cbd249d"
   },
   "guild_focus_L1/M3/s1": {
    "clear": 0.0,
@@ -276,18 +276,18 @@
   "guild_gust_L1/M2/s1": {
    "clear": 0.0,
    "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.5508,
-   "raw_runs": "ba4b7a15b6b4a09bea5c",
-   "result": "70a62168bf683c0db63d",
-   "web": "003bb0ea9a37991e5b13"
+   "prog": 0.5503,
+   "raw_runs": "2bdb736ee10b87073147",
+   "result": "6a052f6f74ce400df1b8",
+   "web": "7e497436bbc674fb8e9f"
   },
   "guild_gust_L1/M2/s2": {
    "clear": 0.0,
    "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.5509,
-   "raw_runs": "e98df6099dc2e3b10267",
-   "result": "d0892f0ef96009c439c5",
-   "web": "bce2d445aa4e29bde05b"
+   "prog": 0.5513,
+   "raw_runs": "0ac1ceca4265e0095f5c",
+   "result": "bf1aa79138d3e658a334",
+   "web": "17d9722aac3e10f1ecfd"
   },
   "guild_gust_L1/M3/s1": {
    "clear": 0.0,
@@ -340,18 +340,18 @@
   "guild_mountain_L1/M2/s1": {
    "clear": 0.0,
    "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.5521,
-   "raw_runs": "6b56943e0c5b845ab563",
-   "result": "006ac69f42b92f8e8582",
-   "web": "b9527e83dde9c4a94b95"
+   "prog": 0.5516,
+   "raw_runs": "0461da97489755533bd6",
+   "result": "68c5c12f36f66beeb41b",
+   "web": "9f079e531999a2d10250"
   },
   "guild_mountain_L1/M2/s2": {
    "clear": 0.0,
    "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.5541,
-   "raw_runs": "2dc176d3cc86409bbb0f",
-   "result": "23885175cf89ac3a5247",
-   "web": "f836f7756db9910ef9d3"
+   "prog": 0.5543,
+   "raw_runs": "276b659dda81becc43b5",
+   "result": "d41b0d656e012402d9b6",
+   "web": "7968d3dc3c870e08f4dd"
   },
   "guild_mountain_L1/M3/s1": {
    "clear": 0.0,
@@ -404,18 +404,18 @@
   "guild_none_L1/M2/s1": {
    "clear": 0.0,
    "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.5508,
-   "raw_runs": "ba4b7a15b6b4a09bea5c",
-   "result": "b8d826de8ec319910bcf",
-   "web": "003bb0ea9a37991e5b13"
+   "prog": 0.5503,
+   "raw_runs": "2bdb736ee10b87073147",
+   "result": "9394ceefa48193256d78",
+   "web": "7e497436bbc674fb8e9f"
   },
   "guild_none_L1/M2/s2": {
    "clear": 0.0,
    "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.5509,
-   "raw_runs": "e98df6099dc2e3b10267",
-   "result": "0494e42f2a01e296abeb",
-   "web": "bce2d445aa4e29bde05b"
+   "prog": 0.5513,
+   "raw_runs": "0ac1ceca4265e0095f5c",
+   "result": "36d6c366099bb20b1e05",
+   "web": "17d9722aac3e10f1ecfd"
   },
   "guild_none_L1/M3/s1": {
    "clear": 0.0,
@@ -468,18 +468,18 @@
   "guild_strike_L1/M2/s1": {
    "clear": 0.0,
    "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.5508,
-   "raw_runs": "ba4b7a15b6b4a09bea5c",
-   "result": "5e0a887862b6211b663c",
-   "web": "003bb0ea9a37991e5b13"
+   "prog": 0.5503,
+   "raw_runs": "2bdb736ee10b87073147",
+   "result": "a4c93b1b4affef1eca43",
+   "web": "7e497436bbc674fb8e9f"
   },
   "guild_strike_L1/M2/s2": {
    "clear": 0.0,
    "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.5509,
-   "raw_runs": "e98df6099dc2e3b10267",
-   "result": "0047ed61705e86a0f4dc",
-   "web": "bce2d445aa4e29bde05b"
+   "prog": 0.5513,
+   "raw_runs": "0ac1ceca4265e0095f5c",
+   "result": "61580f100c2e32add9b0",
+   "web": "17d9722aac3e10f1ecfd"
   },
   "guild_strike_L1/M3/s1": {
    "clear": 0.0,
@@ -596,18 +596,18 @@
   "raid1022_belgras_L0/M4/s1": {
    "clear": 0.0,
    "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.0865,
-   "raw_runs": "6028a34da9c60e8d3dd8",
-   "result": "196d9903056e9cd95c08",
-   "web": "1baf63fcb9a0ce2af2e0"
+   "prog": 0.0856,
+   "raw_runs": "8373ceeefae6d71d9c10",
+   "result": "bc7b385b1150fc4524af",
+   "web": "ccc762afc5b83b47a489"
   },
   "raid1022_belgras_L0/M4/s2": {
    "clear": 0.0,
    "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.0781,
-   "raw_runs": "2c5bbb9e6aee4e935040",
-   "result": "802ac6319b816d9d45e5",
-   "web": "a30a32484620eecf9423"
+   "prog": 0.0762,
+   "raw_runs": "49916938e079ab250553",
+   "result": "331df9fdcaaad09abfc2",
+   "web": "a49e3f9c84f19d96768d"
   },
   "raid1022_belgras_L8/BG/s1": {
    "clear": 0.0,
@@ -628,18 +628,18 @@
   "raid1022_belgras_L8/M4/s1": {
    "clear": 0.0,
    "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.0259,
-   "raw_runs": "de3cb4f6c877d66ef5fb",
-   "result": "19e2d065dadaef65a5c3",
-   "web": "d1cfad2f48e0b0f458a0"
+   "prog": 0.0255,
+   "raw_runs": "904b3c79663d217aa36b",
+   "result": "4e155a33a55486482401",
+   "web": "7484cc70b64698ec6847"
   },
   "raid1022_belgras_L8/M4/s2": {
    "clear": 0.0,
    "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.0265,
-   "raw_runs": "ac9d66a247aad9657dae",
-   "result": "def3516250e6ee30aadc",
-   "web": "3eaed9a4eb4f8342093b"
+   "prog": 0.0267,
+   "raw_runs": "0deb8a62f356271b1b34",
+   "result": "57e61ddb25fa009526bf",
+   "web": "c71e9dd5ee4cedeb6e6c"
   },
   "raid1022_carnelia_L0/BG/s1": {
    "clear": 0.0,
@@ -660,18 +660,18 @@
   "raid1022_carnelia_L0/M4/s1": {
    "clear": 0.0,
    "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.1253,
-   "raw_runs": "fe6932989b3fa700163c",
-   "result": "73738cc361a5869bb0b9",
-   "web": "740c7b2e5241f0f39abf"
+   "prog": 0.1188,
+   "raw_runs": "3ef5fb2749fa46943d6c",
+   "result": "223f330143e35be74c11",
+   "web": "f0990f8563768373f1e5"
   },
   "raid1022_carnelia_L0/M4/s2": {
    "clear": 0.0,
    "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.1271,
-   "raw_runs": "aaba564563f9a3daf69b",
-   "result": "814ace956719ce6ce90e",
-   "web": "1d48efc332919dab3097"
+   "prog": 0.1223,
+   "raw_runs": "05d92519e8bca2aa770e",
+   "result": "8012bada5fed1eb0aa2c",
+   "web": "7c1f486c1c84c6c3f410"
   },
   "raid1022_carnelia_L8/BG/s1": {
    "clear": 0.0,
@@ -692,18 +692,18 @@
   "raid1022_carnelia_L8/M4/s1": {
    "clear": 0.0,
    "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.0387,
-   "raw_runs": "0d7977733cb43e39fb36",
-   "result": "6a78b0d27d4677bf8c64",
-   "web": "235f5ea2da457f2062ae"
+   "prog": 0.038,
+   "raw_runs": "ac6001edeb1e46e6aab0",
+   "result": "af501f96f3c1b96bc647",
+   "web": "20ad630bec2c696ad4b8"
   },
   "raid1022_carnelia_L8/M4/s2": {
    "clear": 0.0,
    "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.0481,
-   "raw_runs": "9d2a585343e13d13f8c9",
-   "result": "4b2efef094010ddc9341",
-   "web": "32cd75b758eb8b6d89cd"
+   "prog": 0.044,
+   "raw_runs": "6c7eceee074fc24b10c2",
+   "result": "e0e786f3c4a16e435f86",
+   "web": "b972bb6422f38b99d32e"
   },
   "raid1022_tyria_L0/BG/s1": {
    "clear": 0.0,
@@ -724,18 +724,18 @@
   "raid1022_tyria_L0/M4/s1": {
    "clear": 0.0,
    "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.1918,
-   "raw_runs": "3a05772f5df69d0681e3",
-   "result": "5f12afba88b1411d0755",
-   "web": "de8034da6297acb9b952"
+   "prog": 0.1938,
+   "raw_runs": "49f8ebbf6f3b1dc8ea65",
+   "result": "184ff024169efb7c0885",
+   "web": "be61ad949bbdb7a45759"
   },
   "raid1022_tyria_L0/M4/s2": {
    "clear": 0.0,
    "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.1921,
-   "raw_runs": "9d5abb010ab90e6b4046",
-   "result": "49ec6f6a21b7c6fd20c2",
-   "web": "d44ff5574a11842a89d3"
+   "prog": 0.1926,
+   "raw_runs": "cf2b0727bf2cb6958138",
+   "result": "e5058d13676e79c8a48b",
+   "web": "0e1f5a0dc6d3446a4bb7"
   },
   "raid1022_tyria_L8/BG/s1": {
    "clear": 0.0,
@@ -756,26 +756,26 @@
   "raid1022_tyria_L8/M4/s1": {
    "clear": 0.0,
    "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.0617,
-   "raw_runs": "677a557fcefb33f20c06",
-   "result": "a51fb4af675abdd97cbf",
-   "web": "c676da955f61207ea252"
+   "prog": 0.0631,
+   "raw_runs": "45d626fb50ab8ba290e2",
+   "result": "a0ce0a7a35ef336d1c1d",
+   "web": "2462a808dd620a35a297"
   },
   "raid1022_tyria_L8/M4/s2": {
    "clear": 0.0,
    "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.0794,
-   "raw_runs": "2ba423655a5557d1fb72",
-   "result": "b7110fef171f68bb6138",
-   "web": "fd3622e1a80155a73da1"
+   "prog": 0.0796,
+   "raw_runs": "121af56000e2a82b38bb",
+   "result": "1365d19e67b2600cfa2f",
+   "web": "22a494586299c9acbcca"
   },
   "raid_baskerville/C/s1": {
    "clear": 0.0,
    "per_run": "7f8a5882638b2a65f749",
-   "prog": 0.5246,
-   "raw_runs": "9993f3c6ff0fe127cf7a",
-   "result": "038012b843b37cd173ba",
-   "web": "0311975b47923f93a7d6"
+   "prog": 0.4858,
+   "raw_runs": "c39110e4fbe6d20f68a4",
+   "result": "645a0bf9cda3fccec8b7",
+   "web": "34021c3cab7c569a7cfe"
   },
   "raid_baskerville/M1/s1": {
    "clear": 0.0,
@@ -788,10 +788,10 @@
   "raid_baskerville/M2/s1": {
    "clear": 0.0,
    "per_run": "1d70cae9eba07fa2ce65",
-   "prog": 0.4176,
-   "raw_runs": "97083513207df74b3cdc",
-   "result": "a6b07df24a0c96f31040",
-   "web": "cb3053ad494f917fcfc8"
+   "prog": 0.4166,
+   "raw_runs": "949feeb67658f5812999",
+   "result": "1e511ea368c2de2cd983",
+   "web": "626be91f0734a4ac66c4"
   },
   "raid_baskerville/M3/s1": {
    "clear": 0.0,
@@ -804,18 +804,18 @@
   "raid_baskerville/M4/s1": {
    "clear": 0.0,
    "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.2615,
-   "raw_runs": "e7eea67d8a77bf533c70",
-   "result": "53ded6a6d0b33135220c",
-   "web": "ab23cd2bc4510a2ab486"
+   "prog": 0.2665,
+   "raw_runs": "90987e1502b3596eea25",
+   "result": "1b64cba0407b9f9ab292",
+   "web": "b9f340887f1adf9ab542"
   },
   "raid_disparity/C/s1": {
    "clear": 0.0,
    "per_run": "7f8a5882638b2a65f749",
-   "prog": 0.6031,
-   "raw_runs": "fccd832a9cc7da5b92af",
-   "result": "70edcab4455108a0c6d7",
-   "web": "bf2e779a31842dd3eaa5"
+   "prog": 0.6027,
+   "raw_runs": "85e12e1b9a540498cac9",
+   "result": "43409fd6c6c63ad09541",
+   "web": "4863ce9953b3cd66092e"
   },
   "raid_disparity/M1/s1": {
    "clear": 0.0,
@@ -844,18 +844,18 @@
   "raid_disparity/M4/s1": {
    "clear": 0.0,
    "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.3201,
-   "raw_runs": "7e229b75c1feeb6c0190",
-   "result": "bf7f35995ead15038365",
-   "web": "4543717078a414536bc1"
+   "prog": 0.3101,
+   "raw_runs": "11321303277b125bf181",
+   "result": "78581ea371cbe20d34fa",
+   "web": "6010cf12e8370f2b2655"
   },
   "raid_mogulus/C/s1": {
    "clear": 0.0,
    "per_run": "7f8a5882638b2a65f749",
-   "prog": 0.4799,
-   "raw_runs": "b1a65aef87c6be4ead27",
-   "result": "3c8ec14d16e1cd992e57",
-   "web": "cffadb9b53526f50151d"
+   "prog": 0.4957,
+   "raw_runs": "9d1da8f8fb844a22231c",
+   "result": "5b8152367839b9b160df",
+   "web": "721605bbc69cf556e116"
   },
   "raid_mogulus/M1/s1": {
    "clear": 0.0,
@@ -868,10 +868,10 @@
   "raid_mogulus/M2/s1": {
    "clear": 0.0,
    "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.2593,
-   "raw_runs": "77875a23ddd61c717fdf",
-   "result": "4b8be15e4d3631482d53",
-   "web": "b2a9a74afd65e555399b"
+   "prog": 0.275,
+   "raw_runs": "2799a443f327dcfd37e0",
+   "result": "5812faf9ac40901034cb",
+   "web": "06869206e879c095b3ab"
   },
   "raid_mogulus/M3/s1": {
    "clear": 0.0,
@@ -884,10 +884,10 @@
   "raid_mogulus/M4/s1": {
    "clear": 0.0,
    "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.1753,
-   "raw_runs": "4ce0b4856002e665c2fe",
-   "result": "54828a95a4bd9594bf91",
-   "web": "72c29aa5c9a1362bc5e9"
+   "prog": 0.1738,
+   "raw_runs": "4d55a2139f0c4ab4a5ae",
+   "result": "74d64253b51216b5bc62",
+   "web": "54c3185921cae6cfe09a"
   },
   "raidex_carnelia_L12/BG/s1": {
    "clear": 0.0,
@@ -908,18 +908,18 @@
   "raidex_carnelia_L12/C/s1": {
    "clear": 0.0,
    "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.037,
-   "raw_runs": "f39d2a35735d55e4e3f4",
-   "result": "e5e5a0dc1fe3cacfaeb1",
-   "web": "29416bd3c3a41216ad4a"
+   "prog": 0.0417,
+   "raw_runs": "7cd8cc3a2b8f21333893",
+   "result": "825353dce80ca207b278",
+   "web": "96c3981d4cd548484dde"
   },
   "raidex_carnelia_L12/C/s2": {
    "clear": 0.0,
    "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.053,
-   "raw_runs": "9ca86662de6ab2005cae",
-   "result": "6a4c4188c98e52504057",
-   "web": "fce0b909025a5251e63c"
+   "prog": 0.0515,
+   "raw_runs": "8db037f8ee3928684e40",
+   "result": "0b1bb4865d43be7b4f28",
+   "web": "155b2fc8d0b04b2f0138"
   },
   "raidex_carnelia_L12/M3/s1": {
    "clear": 0.0,
@@ -932,10 +932,10 @@
   "raidex_carnelia_L12/M3/s2": {
    "clear": 0.0,
    "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.0185,
-   "raw_runs": "919a199894aa3721019d",
-   "result": "dfffa930e571c30fc67d",
-   "web": "f06d7b8999b37727514c"
+   "prog": 0.0179,
+   "raw_runs": "a99a32e24e0ae760c57e",
+   "result": "dc06c259bea6bc5b8ca0",
+   "web": "99f9ebbfade3d47d4aa3"
   },
   "raidex_mogulus_L15/BG/s1": {
    "clear": 0.0,
@@ -956,18 +956,18 @@
   "raidex_mogulus_L15/C/s1": {
    "clear": 0.0,
    "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.0476,
-   "raw_runs": "ab01b959bbfd9c21d92d",
-   "result": "7d82c8e4face0936409b",
-   "web": "0462b897520af96167a6"
+   "prog": 0.039,
+   "raw_runs": "1e5d78d7ddf4d4eca03a",
+   "result": "4cd880e7e1f8182f301f",
+   "web": "1688d1599e436763ebfe"
   },
   "raidex_mogulus_L15/C/s2": {
    "clear": 0.0,
    "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.0593,
-   "raw_runs": "47a77fe626522ed7a2c4",
-   "result": "b96bb522e82e1e6114a9",
-   "web": "b7f98f7f5a87c97704af"
+   "prog": 0.0591,
+   "raw_runs": "cc3b995337935502bd12",
+   "result": "d939cbd96a53ba62e2a6",
+   "web": "213b6d9e2b224089ddb8"
   },
   "raidex_mogulus_L15/M3/s1": {
    "clear": 0.0,
@@ -980,10 +980,10 @@
   "raidex_mogulus_L15/M3/s2": {
    "clear": 0.0,
    "per_run": "2c467c4746d790c5a61c",
-   "prog": 0.0375,
-   "raw_runs": "63636e8375b0ab1fd02b",
-   "result": "c39c1e5a4bcb3a431a9d",
-   "web": "139b5e09a809daf17f2f"
+   "prog": 0.0388,
+   "raw_runs": "938eabdd15eb73108e1b",
+   "result": "29b5d199bc20bd6eaaa7",
+   "web": "3670c0db0856a837a4ec"
   }
  }
 }

@@ -1,5 +1,13 @@
 > 2026-11-27 저장소 밖 폴더 재배치(`<workspace>\README.md`)에 맞춰 이 문서의 `E:\AI_mk2\…` 경로를 새 위치로 일괄 정정했음(당시 명령과 경로만 다름). 루트 없이 적힌 `rebuild_26752678/T`·`decomp_26752678` = `_builds\26752678\rebuild|decomp`, `AI\temp\partynavigator` = `_records\partynavigator-temp`.
 
+## 2026-11-27 — 행동 우선순위 시드를 브라우저 값으로(PC = 사이트)
+
+학습 선별 측정 중 64비트 CPython 과 Pyodide 의 판별 결과가 달랐음. 원인은 `mc._roll_prio` 의 `random.Random(hash(st[:8]) ^ 0x5EED1962)` — 정수 튜플 해시가 Py_hash_t 폭(32/64비트)에 따라 다름. 고치기 전 엔진의 diet 기준선 36건 중 21건이 32·64비트에서 달랐음(PC 시험·골든이 사이트와 다른 결과를 기준으로 삼고 있었음).
+- `_tuple_hash32`: CPython 3.8+ tuplehash(xxHash 32비트 상수)·long_hash(모듈러 2**31-1)를 그대로 계산. 실제 32비트 CPython 3.12.1(Pyodide 0.26.4 와 같은 버전)의 hash(tuple) 2,504건·고정 정답 259건 일치(`tests/hash32_test.py`, 회전 상수를 바꾸면 실패).
+- 골든 교체 근거: 고치기 전 엔진을 32비트로 돌린 결과 = 고친 엔진 64비트 결과(diet 36·unify 123 바이트 동일). `safe_perf_1197383.json` 은 1197383 엔진을 32비트로 다시 떠서 교체(생성 정보 기록). 순환 검증(새 구현으로 기대값만 맞춤)이 아님.
+- `break_skill_test`: 아군·적 동시 게이지 장면이 우선순위 난수로 순서가 갈려 setup 시드 1→5(아군 먼저)로 장면 재선택 — 검사 내용 그대로, 영역 차감을 끄면 10개 하위 검사 실패(리뷰 확인).
+- 검증: 관련 시험, 전체 312 통과, e2e `test_browser_sim`(브라우저 = PC 파이썬). codex 리뷰 blocking 0, 권고 2건(경계 정답 추가·정답 생성 정보) 반영. `PYTHONHASHSEED` 를 바꿔도 골든 일치(문자열 해시 의존 없음).
+
 ## 2026-11-27 — 일반 추천 학습 선별(B) 측정만 수행
 
 - 실제 화면 함수와 `cosmo_learned.js`를 호출하는 Node 드라이버, `battlesim.web.run_auto` 전송, 실제 `directRun('reco')` 브라우저 계측을 추가했음. 수집기는 보유 전원 명세를 저장함. 예선 승격 수·이어쓰기·본선 확장·자리/리더 비교는 화면 정책을 따르며 독립 400판 전에 1위를 고정함. 제품 코드·화면 동작은 바꾸지 않았음.

@@ -22,7 +22,13 @@ OMEGA, MATRIX = '오메가 프로토콜', '치트 매트릭스'
 # 레벨 가산·DamageScale 는 클라 값(break_skill_level·break_skill_scale 스위치 삭제). 레벨·배율 세부는 BreakLevelScaleTest.
 
 
+# 아군·적 게이지를 같게 둔 장면은 행동 우선순위 난수(mc._roll_prio)로 순서가 갈림 — 아군이 먼저 움직이는 시드.
+# 11/27 우선순위 시드를 브라우저(32비트 해시) 값으로 고치면서 1 → SETUP_SEED 로 장면을 다시 고름(HANDOFF 34)
+SETUP_SEED = 5
+
+
 def setup(bs=CUBE, mc=None, roles=('스트라이커',), **kw):
+    kw.setdefault('seed', SETUP_SEED)
     allies = [unit('a%d' % i, role=role) for i, role in enumerate(roles)]
     foe = unit('boss', hp=10 ** 9, sa=1, skills=[dict(slot='기본기', dm=0)])
     foe.boss = True
