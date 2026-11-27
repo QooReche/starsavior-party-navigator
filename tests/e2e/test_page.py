@@ -3272,8 +3272,9 @@ def test_ux_step3(browser, ctx):
         page.screenshot(path=os.path.join(ctx.shots,f'ui3_guild_{suffix}.png'),full_page=True)
     caught('D.guild.sim.ui=true;renderGuild()',guild_reference_hidden,'D.guild.sim.ui=false;renderGuild()')
     caught("document.querySelector('#guild-search').style.marginTop='2400px'",lambda:first_screen('guild'),"$('guild-search').style.marginTop=''")
-    # Explicit opt-in restores both independent metrics and their help.
-    page.evaluate('D.guild.sim.ui=true;renderGuild()')
+    # 기준표가 남아 있는 legacy 경로에서 두 독립 지표와 도움말을 검사한다.
+    page.evaluate("D.guild.search.preset='legacy';D.guild.sim.ui=true;refreshTabs()")
+    settle(page)
     assert page.locator('[data-k="gd-summary-table"] tbody tr').count() == 5
     expected = page.evaluate("""() => ({level:GuildView.simBest(D.guild.sim,2)?.level??null,
       score:Math.round(GuildView.simExpect(D.guild,D.guild.sim,2).m)})""")
@@ -3286,10 +3287,15 @@ def test_ux_step3(browser, ctx):
     page.locator('[data-k="gd-summary-table"] .ux-help[aria-label="점수 편성·지원 설명"]').first.click()
     assert page.locator('#ux-popover').is_visible() and '지원' in page.inner_text('#ux-popover')
     page.keyboard.press('Escape')
-    page.evaluate('D.guild.sim.ui=false;renderGuild()')
+    page.evaluate("D.guild.sim.ui=false;D.guild.search.preset='daily';refreshTabs()")
+    settle(page)
     guild_reference_hidden()
+    # daily 참고 접힘과 단계·EX 레벨 선택은 설계 §1-4에 따라 직접 편성에서만 보임.
+    assert page.locator('#guild-extra').is_hidden()
+    page.click('#mode-strip [data-pn-mode="direct"]')
+    assert page.locator('#direct-guild-controls #stage').is_visible()
     open_fold(page,'gd-effects')
-    page.select_option('#guild-extra [data-g="level"]','6')
+    page.select_option('#direct-guild-controls [data-g="level"]','6')
     assert page.locator('[data-fold="gd-effects"]').evaluate('e=>e.open')
     assert page.evaluate('GS.sel.level') == 6
     # 선택 효과는 시즌 플래그(sets.ui=false)로 숨김 — 드롭다운 없음, 계산 값은 항상 끔.
@@ -3300,6 +3306,8 @@ def test_ux_step3(browser, ctx):
     page.locator('[data-fold="gd-effects"] > summary').click()
     assert page.locator('[data-gs="coop"]').count()==0
     assert page.evaluate("D.guild.season.id===30112 && D.guild.search.excluded.length===0 && !D.guild.search.banCoop")
+    page.click('#mode-strip [data-pn-mode="reco"]')
+    assert page.locator('#guild-extra').is_hidden()
 
     # The real search entry and cancel handlers must stop their workers, with no late result.
     page.evaluate("""() => {window.ui3Created=0;window.ui3Stopped=0;
