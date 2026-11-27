@@ -193,7 +193,7 @@ const finishAll=(h,clear=0.5)=>{const id=h.c.SIMQ.requestId;for(let guard=0;guar
  assert.deepEqual(sent(h),Array.from(h.ev('SIMQ.lastReq.req.teams')).map(t=>t.key));assert(sentOf(h).every(p=>p.req.n_runs===100&&p.req.teams.length===1));
  const olds=h.ws.map(w=>({on:w.onmessage,req:w.req})),first=h.ws[0].req.teams[0].key;
  h.ready();h.serve(h.ws[0],0.9,0.95);h.tick(239999);assert.equal(h.c.SIMQ.err,'');h.tick(1);
- assert.match(h.c.SIMQ.err,/끝난 팀은 이어서/);assert.equal(h.c.SIMQ.busy,null);assert(h.ws.every(w=>w.stopped));
+ assert.match(h.c.SIMQ.err,/끝난 팀은 이어서/);assert.equal(h.c.SIMQ.busy,null);assert(h.ws.slice(1).every(w=>w.stopped),'멈춘(바쁜) 작업자는 끔');assert(!h.ws[0].stopped,'팀을 끝내고 놀던 작업자는 유지(HANDOFF 27②)');
  assert.equal(Object.keys(h.c.SIMQ.res).length,1);
  h.ev('simStart(1)');assert.equal(live(h).length,2,'남은 팀 수만큼만 작업자');assert.equal(sent(h).length,2);
  assert(!sent(h).includes(first));
@@ -234,8 +234,9 @@ console.log('PASS 예선 상한 없음·준비 지연/실패·작업자별 무�
  h.c.SIMQ.rate=2000;for(const w of h.ws)h.send(w,{type:'stage',msg:'시뮬 1/1팀 (100판)'});
  assert.equal(h.c.SIMQ.eta,null,'자동 추천 본선의 남은 시간은 전체 진행 줄이 맡음');
  finishAll(h,0.9);assert.equal(h.c.SIMQ.busy,null);assert.equal(Object.keys(h.c.SIMQ.res).length,3);assert(h.ws.every(w=>!w.stopped));
- // 무효화(조건 변경·취소)에서는 모두 끈다
- h.ev('simInvalidate()');assert(h.ws.every(w=>w.stopped));assert.equal(h.c.SIMQ.pool,null);assert.equal(h.c.SIMQ.w,null);
+ // 무효화(조건 변경·취소): 놀고 있는 작업자는 끄지 않는다 — 다음 계산이 다시 쓴다(HANDOFF 27②, 재부팅·자료 재파싱 없음)
+ h.ev('simInvalidate()');assert(h.ws.every(w=>!w.stopped),'놀던 작업자 유지');assert.equal(h.c.SIMQ.pool.length,3);
+  // (계산 중 무효화로 바쁜 작업자만 끄는 것은 12)·search_executor_batch_test 10)
 }
 
 // 14) 1차 도중 「지금까지 결과로 보기」: 끝난 팀으로 순위 → 안내 + 「끝까지 확인」(안 돈 팀만 8판 → 상위 20팀 32판). 끝난 팀이 없으면 그냥 취소

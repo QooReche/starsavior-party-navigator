@@ -574,6 +574,7 @@ async function guildSearchStart(target=GSR,profileOverride=null){
   const profile=profileOverride||MI.profiles.op||(MI.profiles.op=MyInfoReco.profile(MI.info,R,growth,"op")),results=profile.results;
   const cls=Object.fromEntries(R.map(s=>[s.key,s.cls])),tiers=gsTiers(),breaks=ownedSimBreaks(),sig=gsSig(),context=growthOwnedContext('guild');
   const base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,""),stage=c.key+"/"+st.tab+"/"+st.name,mk=()=>SearchExecutor.createWorker();
+  if(typeof simPoolTrimIdle==='function')simPoolTrimIdle();
   const out=await GuildPlanner.search({S,G,V,results,roster:R.filter(s=>!EXCL.has(s.key)),tiers,breaks,stage,base,workers:Math.max(1,Math.min(2,(navigator.hardwareConcurrency||4)-1)),makeWorker:mk,stale,partialRequested:()=>GSR.stopRequested,
     watch:{hidden:()=>typeof document!=="undefined"&&document.hidden,limit:r=>typeof simTeamLimit==="function"?simTeamLimit(r):240000,loadMs:()=>SIMQ.LOAD_MS||180000},
     onPlan:pl=>{if(stale())return;GSR.plan=pl;GSR.eta=GuildSearch.progressNew(pl,Math.max(1,Math.min(2,(navigator.hardwareConcurrency||4)-1)),typeof LS==='undefined'?null:LS.get(GuildSearch.SPEED_KEY));},
@@ -654,6 +655,7 @@ async function cosmoSearchStart(target=CSR,profileOverride=null){
   const growth=await miGrowth();if(stale())return;
   const profile=profileOverride||MI.profiles.cosmo||(MI.profiles.cosmo=MyInfoReco.profile(MI.info,R,growth,"cosmo"));
   const workers=csWorkers(),base=location.href.replace(/[?#].*$/,"").replace(/[^/]*$/,""),S=CosmoSearch.searchSettings(C.search,CSR.optLearned);
+  if(typeof simPoolTrimIdle==='function')simPoolTrimIdle();
   const out=await CosmoSearch.search({S,bosses:C.bosses.map(b=>b.key),bossName:csBoss,level,mode,results:profile.results,roster:R.filter(s=>!EXCL.has(s.key)),
    makeWorker:()=>SearchExecutor.createWorker(),watch:{hidden:()=>document.hidden,limit:simTeamLimit,loadMs:()=>SIMQ.LOAD_MS},workers,stage:"코스모 게이트",base,stale,levelMax:C.levelMax,boundaries:Object.fromEntries(C.bosses.map(b=>[b.key,b.boundaries||[]])),breaks:csBreaks(),
    onPlan:pl=>{CSR.eta=CosmoSearch.etaNew({stages:pl.stages,weights:S.etaWeights,warmup:S.etaWarmupSec,window:S.etaWindowSec,winFrac:S.etaWinFrac,blend:S.etaBlendSec,prior:CosmoSearch.priorFrom(LS.get("cosmo.speed.v2"),workers)})},
@@ -1114,6 +1116,7 @@ const SIM_EXEC=SearchExecutor.shared({capacity:scrWorkers,loadMs:()=>SIMQ.LOAD_M
 const SIMPOOL=SIM_EXEC.state;
 function scrPool(want){return SIM_EXEC.reserve(want)}
 function simPoolDrop(owner='reco',requestId=null,group=null){return SIM_EXEC.drop(owner,requestId,group)}
+function simPoolTrimIdle(){return SIM_EXEC.trimIdle()}
 function simDispatch(ws,jobs,o){return SIM_EXEC.dispatch(ws,jobs,o)}
 function simWatch(ws,limit,live,stop){return SIM_EXEC.watch(ws,limit,live,stop)}
 function simRelease(w,kill=false){return SIM_EXEC.release(w,kill)}

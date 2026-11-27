@@ -49,6 +49,7 @@ async function guildDailyStart(target=GSR,profileOverride=null,follow=false){
       growthResults=growthSnapshot.profile.results;
     }
     if(target.stopRequested){if(previous)Object.assign(target,previous,{id,following:false,handle:null});else{target.phase='idle';guildDailyRelease(target);}paint();return;}
+    if(typeof simPoolTrimIdle==='function')simPoolTrimIdle();
     const out=await GuildPlanner.search({...cx,session,previous,results:profile.results,growthResults,cosmoSpeed:LS.get("cosmo.speed.v2"),
       base:location.href.replace(/[?#].*$/,'').replace(/[^/]*$/,''),stage:'guild',
       env:{cores:navigator.hardwareConcurrency,memGB:navigator.deviceMemory,mobile:csMobile()},makeWorker:()=>SearchExecutor.createWorker(),stale,partialRequested:()=>target.stopRequested,

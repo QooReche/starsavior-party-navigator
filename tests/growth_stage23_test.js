@@ -92,7 +92,8 @@ async function workerContract(){const ui=readSrc('growth_ui.js');let active=0,pe
   const cancelled=ctx.growthEvaluate([{id:'slow',party:{}}],100,900001,{key:'op'},{tab:'a',name:'b'},1,Date.now()+1000);
   ctx.GROW.id++;ctx.GROW.stop();const stopped=await cancelled;assert.equal(Object.keys(stopped).length,0);assert.equal(active,1,'individual cancellation preserves the unrelated idle worker');
   assert.equal(vm.runInContext('SIMPOOL.workers.filter(w=>w._lease).length',ctx),0);
-  ctx.simPoolDrop('reco');assert.equal(active,0,'whole recommendation cancellation releases its remaining idle pool');
+  ctx.simPoolDrop('reco');assert.equal(active,1,'whole recommendation cancellation keeps the idle worker for the next calculation (HANDOFF 27)');
+  ctx.simPoolTrimIdle();assert.equal(active,0,'trimIdle releases idle workers before a separate-pool search');
 }
 (async()=>{signature();guild();triples();await scheduling();await guildSchedule();await workerContract();
   for(const [name,from,to,test] of [

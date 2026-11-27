@@ -23,11 +23,16 @@ function scrPool(want){const ws=[];ws.capacity=Math.max(1,Math.min(env.capacity(
 function simPoolSync(){env.sync?.(SIMPOOL.workers)}
 function simRelease(w,kill=false){const lease=w._lease;if(lease){const ws=lease.batch.ws,i=ws.indexOf(w);if(i>=0)ws.splice(i,1);w._lease=null;w._job=null;lease.batch.o.arm?.()}
  if(kill)resources.drop(w);simPoolSync()}
+// 취소: 그 owner·요청의 묶음을 닫고, 그 묶음을 «지금 돌리는» 작업자만 끈다(파이썬 중단은 terminate 뿐).
+//  놀고 있는 작업자는 owner 와 무관하게 살려 둔다 — 다음 계산이 엔진 부팅(약 1.4초)·자료 파싱을 다시 하지 않게(HANDOFF 27②).
+//  늦은 응답은 simReceive 의 lease·id·owner·revision·token·job 검사가 막는다(놀고 있는 작업자는 lease 가 없어 받을 답이 없음)
 function simPoolDrop(owner='reco',requestId=null,group=null){
  const matches=b=>b.owner===owner&&(requestId==null||b.o.id===requestId)&&(group==null||b.o.group===group);
  for(const b of SIMPOOL.batches.filter(matches)){b.closed=true;b.o.arm?.cancel?.()}
- for(const w of SIMPOOL.workers.slice())if(matches(w._lease?.batch||w._lastBatch))simRelease(w,true);
+ for(const w of SIMPOOL.workers.slice())if(w._lease&&matches(w._lease.batch))simRelease(w,true);
  SIMPOOL.batches=SIMPOOL.batches.filter(b=>!b.closed);simPump()}
+// 놀고 있는 작업자 정리: 자기 풀을 따로 띄우는 탐색(코스모 3보스·길드 찾기) 직전에 불러 두 풀이 함께 상주하지 않게 함(메모리 예산은 풀 하나 기준)
+function simPoolTrimIdle(){for(const w of SIMPOOL.workers.slice())if(!w._lease)simRelease(w,true)}
 function simReceive(w,m){
  const lease=w._lease;if(w._dead||!lease)return;
  const b=lease.batch,o=b.o;
@@ -84,7 +89,7 @@ function simDispatch(ws,jobs,o){const b={ws,jobs,o,owner:o.owner||'reco',next:0,
 // 무진행 감시(작업자별): 일하는 작업자마다 «마지막 소식(w._last) + 상한»을 넘기면 stop(그 작업자가 엔진을 준비했는가). 상한 = 엔진 준비 전 LOAD_MS, 준비 뒤 limit().
 //  가려진 탭이거나 타이머가 예정보다 크게 늦게 돌았으면(탭 동결·절전 복귀 — 그동안 계산도 멈춤) 끝내지 않고 다시 잰다. 늦게 돈 경우 그동안 잰 팀 시간(w._t)은 속도 표본에서 버린다
 function simWatch(ws,limit,live,stop){return watchWorkers(ws,limit,live,stop,{...env,now,setTimer,clearTimer})}
-return {state:SIMPOOL,reserve:scrPool,drop:simPoolDrop,dispatch:simDispatch,watch:simWatch,release:simRelease,chunkSize};
+return {state:SIMPOOL,reserve:scrPool,drop:simPoolDrop,trimIdle:simPoolTrimIdle,dispatch:simDispatch,watch:simWatch,release:simRelease,chunkSize};
 }
 function watchWorkers(ws,limit,live,stop,env={}){
  const now=env.now||(()=>Date.now()),setTimer=env.setTimer||((...args)=>setTimeout(...args)),clearTimer=env.clearTimer||((...args)=>clearTimeout(...args));

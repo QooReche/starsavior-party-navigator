@@ -61,6 +61,36 @@ function suite(E){
   // 시계가 뒤로 가도(1시간) 대기는 ms 이하 — 진행 표시가 멈추지 않음
   let b=0;const h=E.throttle(()=>b++,200,undefined,env);h();assert.equal(b,1);clock-=3600000;h();assert.equal(q.length,1);assert.ok(q[0].at-clock<=200,'대기 상한 '+(q[0].at-clock));tick(200);assert.equal(b,2,'시계가 뒤로 가도 간격 끝에 한 번');
   assert.equal(E.PAINT_MS,200);}
+ // 10) 작업자 수명(HANDOFF 27②): 취소는 그 묶음을 돌리는 작업자만 끄고, 놀고 있는 작업자는 owner 와 무관하게 살아서 다음 계산이 다시 씀
+ const run=(t,owner,id,keys)=>{const log=[];t.ex.dispatch(t.ex.reserve(keys.length),keys.map(k=>job(k)),{owner,id,live:()=>true,
+  msg:j=>({type:'run',n_runs:j.n,options:j.extra,teams:[{key:j.key}]}),team:(j,m)=>log.push([j.key,m.result]),done:()=>log.push('done'),error:m=>log.push(m)});return log};
+ {const t=env(E,2);const a=run(t,'reco',1,['a']);answer(t,t.made[0],['a']);assert.deepEqual(a,[['a','a'],'done']);
+  t.ex.drop('reco');assert.equal(t.made[0].ended,undefined,'입력 변경(전체 취소)에도 놀던 작업자는 살림');
+  const b=run(t,'reco',2,['b']);assert.equal(t.made.length,1,'새 계산은 놀던 작업자를 다시 씀(새 부팅 없음)');answer(t,t.made[0],['b']);assert.deepEqual(b,[['b','b'],'done']);}
+ {const t=env(E,2);run(t,'reco',1,['a']);answer(t,t.made[0],['a']);           // made[0] = 놀고 있음(마지막 묶음 reco)
+  run(t,'reco',2,['b']);assert.equal(t.made[0].posts.length,2,'놀던 작업자가 먼저 받음');
+  run(t,'growth',3,['c']);const busy=t.made[0],other=t.made[1];
+  t.ex.drop('reco');assert.equal(busy.ended,true,'바쁜 작업자는 끔');assert.equal(other.ended,undefined,'다른 owner 의 바쁜 작업자는 그대로');
+  assert.deepEqual([...t.ex.state.workers],[other]);}
+ // 11) 늦은 응답: 같은 id·같은 팀 key 로 다른 owner 에 다시 맡긴 뒤 옛 작업의 답(옛 token·owner)은 버림
+ {const t=env(E,1);run(t,'reco',5,['a']);const w=t.made[0],old=w.posts.at(-1);answer(t,w,['a']);
+  const log=run(t,'direct',5,['a']);assert.equal(t.made.length,1);
+  w.onmessage({data:{id:old.id,requestId:old.id,owner:old.owner,revision:old.revision,job:old.job,jobId:old.jobId,type:'team',key:'a',result:'옛것'}});
+  assert.deepEqual(log,[],'옛 owner·token 응답 거부');t.send(w,{type:'team',key:'a',result:'새것'});assert.deepEqual(log,[['a','새것']]);}
+ {const t=env(E,1);run(t,'reco',5,['a']);const w=t.made[0],old=w.posts.at(-1);answer(t,w,['a']);
+  const log=run(t,'reco',5,['a']);    // 같은 owner·id·key·job 번호 — 옛 답과 갈리는 것은 token(jobId)뿐
+  w.onmessage({data:{id:old.id,requestId:old.id,owner:old.owner,revision:old.revision,job:old.job,jobId:old.jobId,type:'team',key:'a',result:'옛것'}});
+  assert.deepEqual(log,[],'같은 owner 라도 옛 token 응답 거부');}
+ // 12) requestId·group 취소 격리: 같은 owner 의 다른 요청은 그대로
+ {const t=env(E,2);run(t,'direct',1,['a']);run(t,'direct',2,['b']);t.ex.drop('direct',1);
+  assert.equal(t.made[0].ended,true);assert.equal(t.made[1].ended,undefined,'다른 요청은 안 끔');}
+ {const t=env(E,2),go=g=>t.ex.dispatch(t.ex.reserve(1),[job(g)],{owner:'cdirect',id:9,group:g,live:()=>true,msg:j=>({type:'run',n_runs:1,teams:[{key:j.key}]}),team(){},done(){},error(){}});
+  go('boss1');go('boss2');t.ex.drop('cdirect',9,'boss1');
+  assert.equal(t.made[0].ended,true);assert.equal(t.made[1].ended,undefined,'같은 owner·id 의 다른 group 은 안 끔');}
+ // 13) trimIdle: 놀고 있는 작업자만 정리(별도 풀 탐색 직전), 바쁜 작업자는 그대로
+ {const t=env(E,2);run(t,'reco',1,['a']);answer(t,t.made[0],['a']);run(t,'growth',2,['b']);run(t,'growth',2,['c']);
+  const [idle,busy]=[t.made[0],t.made[1]];assert.equal(idle.posts.length,2,'놀던 작업자가 다시 받음');answer(t,idle,['b']);
+  t.ex.trimIdle();assert.equal(idle.ended,true,'놀던 작업자 정리');assert.equal(busy.ended,undefined,'바쁜 작업자 유지');assert.deepEqual([...t.ex.state.workers],[busy]);}
 }
 suite(load(source));
 const mutants=[
@@ -72,6 +102,22 @@ const mutants=[
  ['간격 제한 없음',s=>s.replace('if(wait<=0){run();return}','run();return;')],
  ['대기 상한 없음',s=>s.replace('setTimer(run,Math.min(ms,wait))','setTimer(run,wait)')],
  ['끝 호출 버림(항상)',s=>s.replace('if(trailing)timer=setTimer(run,Math.min(ms,wait))','')],
+ ['취소 때 놀던 작업자도 끔(옛 동작)',s=>s.replace('if(w._lease&&matches(w._lease.batch))','if(matches(w._lease?.batch||w._lastBatch))')],
+ ['취소 때 owner 무관하게 바쁜 작업자 끔',s=>s.replace('if(w._lease&&matches(w._lease.batch))','if(w._lease)')],
+ ['trimIdle 이 바쁜 작업자도 끔',s=>s.replace('if(!w._lease)simRelease(w,true)','simRelease(w,true)')],
+ ['group 검사 없음',s=>s.replace('&&(group==null||b.o.group===group)','')],
+ ['token 검사 없음',s=>s.replace('||m.jobId!=null&&m.jobId!==lease.token','')],
 ];
+// 별도 풀 탐색(길드 legacy·코스모 3보스·길드 daily)은 자기 풀을 띄우기 직전에 공용 풀의 놀던 작업자를 정리해야 함(두 풀 동시 상주 방지)
+function trimWiring(page,daily){
+ for(const call of ['GuildPlanner.search({S,G,V,','CosmoSearch.search({S,bosses:']){const i=page.indexOf(call);assert.ok(i>0,call);
+  assert.match(page.slice(Math.max(0,i-120),i),/simPoolTrimIdle\(\);\s*const out=await $/,call+' 직전에 trimIdle')}
+ const i=daily.indexOf('GuildPlanner.search({...cx,session');assert.ok(i>0);assert.match(daily.slice(Math.max(0,i-120),i),/simPoolTrimIdle\(\);\s*const out=await $/,'daily 직전에 trimIdle');
+ assert.match(page,/function simPoolTrimIdle\(\)\{return SIM_EXEC\.trimIdle\(\)\}/);}
+const PAGE=fs.readFileSync(require.resolve('../party_template.html'),'utf8'),DAILY=fs.readFileSync(require.resolve('../guild_daily_page.js'),'utf8');
+trimWiring(PAGE,DAILY);
+for(const [name,f,g] of [['daily trim 없음',x=>x,x=>x.replace("if(typeof simPoolTrimIdle==='function')simPoolTrimIdle();\n",'')],
+ ['코스모 trim 없음',x=>x.replace(/if\(typeof simPoolTrimIdle==='function'\)simPoolTrimIdle\(\);\n(  const out=await CosmoSearch)/,'$1'),x=>x]]){
+ const p2=f(PAGE),d2=g(DAILY);assert.ok(p2!==PAGE||d2!==DAILY,name+': 바꿀 곳 없음');assert.throws(()=>trimWiring(p2,d2),assert.AssertionError,name)}
 for(const [name,f] of mutants){const src=f(source);assert.notEqual(src,source,name+': 바꿀 곳 없음');assert.throws(()=>suite(load(src)),assert.AssertionError,name);}
-console.log('PASS executor batch: 크기·순서, key 거부·중복, done 조건, 머리 분리, 팀 단위 시계, 취소 보존, chunk 없음=지금, 크기 식, 갱신 간격 제한(시계 역행 상한); mutations '+mutants.length+' rejected');
+console.log('PASS executor batch: 크기·순서, key 거부·중복, done 조건, 머리 분리, 팀 단위 시계, 취소 보존, chunk 없음=지금, 크기 식, 갱신 간격 제한(시계 역행 상한), 작업자 수명(놀던 작업자 유지·trimIdle·늦은 응답·취소 격리); mutations '+mutants.length+' rejected');

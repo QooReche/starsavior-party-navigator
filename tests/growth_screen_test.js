@@ -125,7 +125,7 @@ async function suite(src){
   '팀 결과가 와도 다시 안 잼':{...SRC,evaluate:rep(SRC.evaluate,"team(j,m){if(stall)arm();",'team(j,m){')},
   '2차가 1차 판을 다시 돎':{...SRC,search:rep(SRC.search,"const raw=prev&&prev.n<n?prev.r[k]?.raw:null;",'const raw=null;')},
   '2차에 판 번호를 안 밂':{...SRC,search:rep(SRC.search,"run_offset:prev.n,",'')},
-  '정상 종료에도 작업자를 끔':{...SRC,evaluate:rep(SRC.evaluate,"if(cut)simPoolDrop(owner,request);","simPoolDrop();")},
+  '정상 종료에도 작업자를 끔':{...SRC,evaluate:rep(SRC.evaluate,"if(cut)simPoolDrop(owner,request);","simPoolTrimIdle();")},
   '끊겨도 작업자를 안 끔':{...SRC,evaluate:rep(SRC.evaluate,"if(cut)simPoolDrop(owner,request);",'')},
   '고정 분배(done 없이 다음 팀)':{...SRC,pool:rep(SRC.pool,"  simPump()}}","  /* no next assignment */}}")},
   '준비 전에도 무진행 상한':{...SRC,evaluate:rep(SRC.evaluate,"stall.ready?simTeamLimit(n,'auto'):SIMQ.LOAD_MS","true?simTeamLimit(n,'auto')+1:SIMQ.LOAD_MS")},

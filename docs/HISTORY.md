@@ -1,5 +1,14 @@
 > 2026-11-27 저장소 밖 폴더 재배치(`<workspace>\README.md`)에 맞춰 이 문서의 `E:\AI_mk2\…` 경로를 새 위치로 일괄 정정했음(당시 명령과 경로만 다름). 루트 없이 적힌 `rebuild_26752678/T`·`decomp_26752678` = `_builds\26752678\rebuild|decomp`, `AI\temp\partynavigator` = `_records\partynavigator-temp`.
 
+## 2026-11-27 — 입력 변경 뒤 작업자 재부팅 없앰(HANDOFF 27②)
+
+입력을 바꾸거나 계산을 취소하면(`simInvalidate`·`simPoolDrop`) 그 owner 의 작업자를 바쁜 것뿐 아니라 마지막 묶음이 그 owner 였던 놀고 있는 작업자까지 끄고 있었음. 그래서 스테이지를 옮길 때마다 다음 계산이 작업자를 전부 다시 부팅(약 1.4초, docs/cosmo_speed_1110.md)하고 자료를 다시 파싱함(CPython 첫 run_auto 0.90초 vs 두 번째 0.05초).
+- `search_executor.js` `simPoolDrop`: 그 묶음을 지금 돌리는 작업자(lease 있음)만 terminate. 놀고 있는 작업자는 owner 와 무관하게 살림. 늦은 응답은 기존 lease·id·owner·revision·token·job 검사가 막음.
+- 코스모 3보스·길드 찾기(legacy·daily)는 자기 풀을 따로 띄우므로 그 직전에 `simPoolTrimIdle()`로 공용 풀의 놀던 작업자를 정리함(두 풀 동시 상주 방지 — 메모리 예산은 풀 하나 기준).
+- 실측(Chromium, 작업자 4, 표준 육성, 작전 1-1→1-2→1-3 추천): 전 Worker 생성 4/4/4·2·3번째 11.3/9.8초 → 후 4/0/0·8.3/8.8초. 엔진·결과 불변.
+- 시험: `search_executor_batch_test.js` 10~13(놀던 작업자 재사용, 바쁜 작업자만 종료·다른 owner 유지, 같은 owner·id·key 재대여 뒤 옛 token 응답 거부, requestId·group 취소 격리, trimIdle, trim 연결 위치) + 변이 5개. `growth_stage23_test.js` 전체 취소 기대를 «놀던 작업자 유지 → trimIdle 로 정리»로, `growth_screen_test.js` «정상 종료에도 작업자를 끔» 변이를 trimIdle 주입으로 바꿈(옛 `simPoolDrop()` 주입은 이제 무해).
+- 설계 상담·리뷰 codex(astra): 설계 A 단독 채택 합의. 지난 길드 시즌을 묶음에서 빼는 것은 `diet_baseline` 이 30111 을 써서 보류, 자료 필드 슬림(다이어트 2단계)·빈 자리 미리 부팅은 이득이 작아 보류. 리뷰 blocking 0, 권고 2건(group 격리·trim 연결 시험) 반영.
+
 ## 2026-11-27 — 코스모 틀 전환 후 e2e 경로 정리
 
 - `test_patch1126_direct`·`test_guild_sets_hidden`의 EX 레벨·지원 선택을 `#direct-guild-controls`로 옮겼음. 실제 시뮬·저장·공유·선택 효과 0 검사는 유지했음.
