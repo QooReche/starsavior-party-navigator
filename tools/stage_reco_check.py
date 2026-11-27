@@ -27,6 +27,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / 'tools'))
 OUT = Path('E:/AI_mk2/_private/role-private/casebook_myinfo/site_reco')
 SEED = 20261122
 TOP_Q = 0.2
@@ -38,9 +39,10 @@ CASES = [   # tools/casebook_search_check.py STAGE_CASES 와 같음
 
 # 화면 안에서 도는 수집 함수. 화면 전역(recoCandidates·partyPool·quickRank·scrPick·simParty …)을 그대로 씀
 COLLECT_JS = r"""
-(caseKeys) => {
+({caseKeys=[],learned=false,probeOnly=false}) => {
  const c=contents[$("content").value],st=cur[$("stage").value];
  const own=new Set([...document.querySelectorAll("#own input:checked")].map(x=>x.dataset.k));
+ if(!MI.info&&!own.size)for(const s of R)if(!EXCL.has(s.key))own.add(s.key);
  GIMACT=gimTop(c,st);SBACT=st.sb||[];DMW=[Math.min(1,(st.n-1)/2),c.boss?CFG.damage.weightBoss:CFG.damage.weightMob];
  const defPen=(CFG.defPenByContent[c.name]??CFG.weights.defenderPenalty);
  const qi=quickIn(c,st);const t0=performance.now();
@@ -48,6 +50,22 @@ COLLECT_JS = r"""
  const ck=ks=>ks.slice().sort().join(","),caseK=ck(caseKeys);
  const cands=plan.cands,pool=partyPool(cands).map(x=>x.s.key);
  const qt=plan.qt;const qIdx=qt.findIndex(t=>ck(t.keys)===caseK);
+ if(probeOnly&&qt.some(t=>t.vd!=='hard'))return {excluded:'quick_not_all_hard',content:c.key,stage:st.tab+'|'+st.name};
+ if(learned){
+  const names=['simParty','place','leaderPick','partySyn','arrangeRule','arrangeOf','arrGet','arrSet','pickBreak','breakChoice','teamBreak',
+   'scrPick','scrFullKeys','scrFullInit','scrFullRank','scrRoundN','scrPrior','scrLegOpt','scrCmp','scrDone','scrOrder','scrShort','scrClose','recoScreenSequence','quickRows',
+   'recoArrange','recoArrangeRevert'];
+  const sources=Object.fromEntries(names.map(n=>[n,eval(n).toString()]));
+  const constants={SCR_ROUNDS,SCR_FULL,RECO_ARR_SCREEN,RECO_ARR_KEEP,RECO_ARR_CHECK,RECO_ARR_FINAL,RECO_ARR_SEED,LEAD_TAGS};
+  const initial=scrPick(qt,SCR_RK&&rkOf(c.key)?rkQuickTop(c,st,qt,SCR_RK):null);
+  return {schema:1,private:!!MI.info,c,st,cands,qi,profile:miMode()?miProfile():null,
+   qt:qt.map(t=>({keys:t.keys,v:t.v,vd:t.vd})),initial,pool:partyPool(cands).map(x=>x.s.key),
+   sources,constants,options:simOpt(c.key),breaks:breakOwned(),levels:Object.fromEntries(breakOwned().map(k=>[k,brkLv(k)])),
+   selected:BRSEL,shared:SHARE,sessionBreak:SESSION_BR,bloom:BLOOM,
+   // Every eligible owned savior is retained. These inputs recreate simParty for arbitrary teams without 4-combo materialization.
+   allOwned:cands.map(x=>x.s.key),unitQuick:QK.d.sv,ms:{plan:tPlan},
+   parity:qt.slice(0,3).map(t=>({keys:t.keys,party:simParty(t),brk:teamBreak(t)}))};
+ }
  const vIdx=plan.ranked.findIndex(x=>ck(x.combo.map(y=>y.s.key))===caseK);
  // 사례 팀을 화면과 같은 방식으로 만든 t(빠른 계산·내 정보 최종 능력치·배치·리더·브레이크)
  const pick=caseKeys.map(k=>cands.find(x=>x.s.key===k));
@@ -100,14 +118,19 @@ def serve():
     return srv
 
 
-def collect(myinfo, out):
+def collect(myinfo, out, learned=False, standard=False, stages=None, discover=False):
+    if learned:
+        scratch = out.resolve() / 'tmp'
+        scratch.mkdir(parents=True, exist_ok=True)
+        os.environ['TEMP'] = os.environ['TMP'] = str(scratch)
     os.environ.setdefault('PLAYWRIGHT_BROWSERS_PATH', r'E:\AI_mk2\_env\pw-browsers')
     from playwright.sync_api import sync_playwright
-    info = Path(myinfo).read_text(encoding='utf-8')
-    seed = {'pn.myinfo': info, 'pn.simauto': '0'}
+    info = None if standard else Path(myinfo).read_text(encoding='utf-8')
+    seed = {'pn.simauto': '0', **({'pn.myinfo': info} if info else {})}
     srv = serve()
     base = 'http://127.0.0.1:%d' % srv.server_port
     res = []
+    out.mkdir(parents=True, exist_ok=True)
     with sync_playwright() as p:
         br = p.chromium.launch()
         page = br.new_page(viewport={'width': 1280, 'height': 900})
@@ -115,13 +138,40 @@ def collect(myinfo, out):
         # 자동 시뮬을 막음(수집만): 시험의 수동 모드와 같은 방식
         page.add_init_script("document.addEventListener('DOMContentLoaded',()=>{simAutoOn=()=>false;},{once:true})")
         page.goto(base + '/index.html')
-        page.wait_for_function("() => window._ready && MI.info && MI.growth && !MI.pending", timeout=120000)
-        assert page.evaluate('miMode()'), '내 정보 모드가 아님'
-        for c in CASES:
+        page.wait_for_function("() => window._ready && QK.d && !MI.pending", timeout=120000)
+        if not standard:
+            page.wait_for_function('MI.info && MI.growth', timeout=120000)
+            assert page.evaluate('miMode()'), '내 정보 모드가 아님'
+        else:
+            page.evaluate('RECO.standard=true')
+        cases = CASES if not standard else [
+            dict(id='op38', content='op', name='SECTOR 38-36', rk=0),
+            dict(id='op31rk3', content='op', name='SECTOR 31-36', rk=3),
+            dict(id='sun250', content='clo', tab='태양 회랑', name='FLOOR 250', rk=0)]
+        if stages:
+            if not standard:
+                raise ValueError('--stages requires --standard')
+            cases = [dict(id=i, content=c, tab=t or None, name=n, rk=int(r)) for i,c,t,n,r in
+                     (s.split('|') for s in stages.split(';'))]
+        if discover:
+            if not standard or not learned:
+                raise ValueError('--discover-hard requires --standard --learned')
+            cases = []
+            for kind in ('op', 'clo'):
+                ci = page.evaluate('k=>contents.findIndex(c=>c.key===k)', kind)
+                page.select_option('#content', value=str(ci))
+                page.wait_for_timeout(300)
+                candidates = page.evaluate(r"""kind=>cur.filter(s=>kind==='op'?/SECTOR (2[5-9]|3\d|4\d)-(12|18|24|30|36)$/.test(s.name):['성간 회랑','달 회랑','태양 회랑'].includes(s.tab)&&/FLOOR \d+[05]$/.test(s.name))
+                    .map((s,i)=>({id:kind+'probe'+i,content:kind,tab:s.tab,name:s.name,rk:0}))""", kind)
+                cases.extend(candidates)
+        probes = []
+        for c in cases:
+            if discover and sum(r.get('c', {}).get('key') == c['content'] for r in res) >= (2 if c['content'] == 'op' else 1):
+                continue
             ci = page.evaluate("k=>contents.findIndex(c=>c.key===k)", c['content'])
             page.select_option('#content', value=str(ci))
             page.wait_for_timeout(500)
-            si = page.evaluate("([t,n])=>cur.findIndex(s=>s.tab===t&&s.name===n)", [c['tab'], c['name']])
+            si = page.evaluate("([t,n])=>cur.findIndex(s=>(!t||s.tab===t)&&s.name===n)", [c.get('tab'), c['name']])
             assert si >= 0, c
             page.evaluate("i=>{const s=document.querySelector('#stage');if(![...s.options].some(o=>+o.value===i)){const q=document.querySelector('#q');if(q){q.value='';q.dispatchEvent(new Event('input'))}}}", si)
             page.wait_for_timeout(500)
@@ -129,13 +179,27 @@ def collect(myinfo, out):
             page.dispatch_event('#stage', 'change')
             page.wait_for_timeout(800)
             assert page.evaluate("()=>cur[$('stage').value].name") == c['name']
-            assert page.evaluate("()=>miMode()")
+            if not standard:
+                assert page.evaluate("()=>miMode()")
+            if standard:
+                page.select_option('#rk', str(c.get('rk', 0)), force=True)
+                page.wait_for_timeout(300)
             t = time.time()
-            r = page.evaluate(COLLECT_JS, c['keys'])
+            r = page.evaluate(COLLECT_JS, dict(caseKeys=c.get('keys', []), learned=learned, probeOnly=discover))
+            if discover:
+                probes.append(dict(id=c['id'], content=c['content'], tab=c.get('tab'), name=c['name'], excluded=r.get('excluded')))
+                (out / 'probe.json').write_text(json.dumps(probes, ensure_ascii=False), encoding='utf-8')
+                if r.get('excluded'):
+                    print(c['id'], 'not all hard', flush=True)
+                    continue
             r['id'] = c['id']
-            r['caseKeys'] = c['keys']
+            r['caseKeys'] = c.get('keys', [])
             r['wall'] = time.time() - t
             res.append(r)
+            (out / 'collect.json').write_text(json.dumps(res, ensure_ascii=False), encoding='utf-8')
+            if learned:
+                print(c['id'], 'collected', flush=True)
+                continue
             print(c['id'], 'pool', r['casePool'], 'inRanked', r['caseInRanked'], 'qPos', r['caseQPos'], '/', r['nCombos'],
                   'inScr', r['caseInScr'], 'scr', len(r['scr']), 'fullPos', r['full']['casePos'], '/', r['full']['n'],
                   'top80OutOfPool', r['full']['top80OutOfPool'], 'ms', round(r['full']['rankMs']), flush=True)
@@ -275,12 +339,23 @@ def main():
     ap.add_argument('--myinfo', default='E:/AI_mk2/_private/role-private/op4212/myinfo_1121.json')
     ap.add_argument('--out', default=str(OUT))
     ap.add_argument('--workers', type=int, default=4)
+    ap.add_argument('--learned', action='store_true', help='일반 학습 측정용 보유 전원 입력·화면 함수 수집')
+    ap.add_argument('--standard', action='store_true', help='계정 없이 공개 표준 육성 bench 3개 수집')
+    ap.add_argument('--stages', help='표준 추가 탐침: id|content|tab|name|rekindle;...')
+    ap.add_argument('--discover-hard', action='store_true', help='현재 표준 화면에서 실제 전원 hard인 작전 2곳·회랑 1곳 탐침')
     a = ap.parse_args()
     out = Path(a.out)
-    if ROOT in out.resolve().parents:
+    if a.standard and (a.cmd != 'collect' or not a.learned):
+        ap.error('--standard requires collect --learned')
+    if a.learned and a.out == str(OUT):
+        out = ROOT / 'local/learned_reco' if a.standard else Path('E:/AI_mk2/_private/role-private/learned_reco')
+    if a.learned and not a.standard:
+        from learned_reco_measure import check_output
+        check_output({'private': True}, out)
+    if not a.standard and ROOT in out.resolve().parents:
         raise SystemExit('--out 은 저장소 밖이어야 함(계정 결과)')
     if a.cmd == 'collect':
-        collect(a.myinfo, out)
+        collect(a.myinfo, out, a.learned, a.standard, a.stages, a.discover_hard)
     elif a.cmd == 'eval':
         evaluate(out, a.workers)
     else:

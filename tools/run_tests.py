@@ -36,6 +36,7 @@ def main():
     ap.add_argument('--e2e', metavar='PYTHON', help='Playwright 가 깔린 python 경로(예: E:\\AI_mk2\\_env\\venv-pw\\Scripts\\python.exe)')
     ap.add_argument('--strict', action='store_true', help='환경 때문에 건너뛴 검사가 하나라도 있으면 실패로 침')
     ap.add_argument('--timeout', type=int, default=900)
+    ap.add_argument('--skip', action='append', default=[], metavar='FILENAME', help='명시한 시험 파일만 제외(예: 그림 재빌드 금지 작업)')
     a = ap.parse_args()
     py = [sys.executable, '-X', 'utf8', '-I']
     if a.rebuild:
@@ -57,6 +58,12 @@ def main():
                 'assumed_guide_test.js', 'guide_bundle_test.js', 'review_guides_test.js', 'reco_plan_test.js'} else [])))
     if a.only:
         tests = [t for t in tests if any(w in t[0] for w in a.only)]
+    if a.skip:
+        unknown = set(a.skip) - {t[0] for t in tests}
+        if unknown:
+            ap.error('없는 제외 시험: ' + ', '.join(sorted(unknown)))
+        print('요청으로 제외: ' + ', '.join(a.skip), flush=True)
+        tests = [t for t in tests if t[0] not in a.skip]
     if a.e2e:
         tests.append(('e2e/test_placement.py', [a.e2e, '-X', 'utf8', 'tests/e2e/test_placement.py']))
         tests.append(('e2e/test_cosmo_learned.py', [a.e2e, '-X', 'utf8', 'tests/e2e/test_cosmo_learned.py']))
