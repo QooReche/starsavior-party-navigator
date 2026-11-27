@@ -174,6 +174,7 @@ button.ux-help.ux-help,.season-reference .ux-help{font-size:0;line-height:0;padd
 .progress>p{margin:8px auto;max-width:80ch}.progress>button{margin:4px}
 .simbar:has(>.gwen-work),.bcstate:has(>.gwen-work){justify-content:center}
 :is([data-k=gd-search-progress],[data-k=cs-progress])>button{display:block;margin:12px auto}
+:is([data-k=gd-search-progress],[data-k=cs-progress])>.gd-small{margin-inline:auto}
 #growth-result:has(>.gwen-work)>[data-k=growth-msg]{display:block;margin:8px auto;max-width:80ch}
 #growth-result:has(>.gwen-work) .growth-none-hint{margin-inline:auto;text-align:left}
 :is(.simbar,.bcstate):has(>.gwen-work)>[data-k=eta]{flex-basis:100%}
@@ -262,4 +263,4 @@ img[data-gwen-rest=true]{transform-origin:50% 100%;animation:gwen-breathe 3.6s e
 .cs-foot{display:flex;flex-direction:column;gap:8px}
 @media(max-width:600px){.season-actions>button{flex:1 1 100%;min-height:48px}}
 
-.cs-boss>.growth-tasks{grid-column:1/-1}
+@media(min-width:1200px){.cs-boss>.growth-tasks{grid-column:1/-1;grid-row:4}}

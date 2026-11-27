@@ -8,7 +8,7 @@ const G=require('./guild_fixture')(30112),nowMs=Date.parse('2026-11-26T12:00:00+
 G.search.preset='daily';
 const team={kind:'ex',step:7,level:1,order:['a','b','c','d'],leaderKey:'c',sup:'none',score:100,mean:90,clear:.5};
 const done=()=>({phase:'done',teams:[team],rows:[team],sum:100,split:{ex:1,normal:0},seals:{used:2,remaining:1},plan:{day:V.gameDay(G,nowMs),reductions:[]}});
-const cx={G,nowMs,esc:U.esc,hasInfo:true,cards:()=>'',breakBar:()=>'',label:k=>k,say:()=>'',work:()=>'',report:()=>'',error:()=>''};
+const cx={G,nowMs,esc:U.esc,hasInfo:true,cards:()=>'',breakBar:()=>'',label:k=>k,say:()=>'',work:()=>'',report:()=>'',error:()=>'',summary:()=>''};
 function fn(src,name,next){const start=src.indexOf('function '+name),end=next?src.indexOf(next,start):-1;assert(start>=0);return src.slice(start,end<0?src.length:end);}
 function dailyContext(){
   const c={D:{guild:G},GSR:{id:0,phase:'idle',banCoop:true},MI:{info:{},growth:{},hash:'synthetic',profiles:{op:{results:{}}}},
@@ -43,10 +43,10 @@ test('growth checkbox invalidates session and immediately refreshes follow, warn
   vm.runInContext(fn(growth,'growthOptions','function growthCacheTag'),c);
   c.growthEnabled=()=>box.checked;
   Object.assign(c.GSR,done(),{sig:c.guildDailySig(),session:{close(){closed++;}}});
-  c.renderGuildSearch();assert(painted.includes('data-gs="follow"'));assert(painted.includes('약 10초'));
+  c.renderGuildSearch();assert(painted.includes('data-gs="follow"'));assert(!painted.includes('약 10초'));assert.equal(c.guildDailyPreview().estimatedSec,10);
   vm.runInContext(fn(growth,'growthInit','function growthTargets'),c);c.growthInit();box.checked=true;box.onchange();
   assert.equal(closed,1);assert.equal(c.GSR.session,null);assert(!painted.includes('data-gs="follow"'));
-  assert(painted.includes('다시 찾기 필요'));assert(painted.includes('약 20초'));
+  assert(painted.includes('다시 찾기 필요'));assert(!painted.includes('약 20초'));assert.equal(c.guildDailyPreview().estimatedSec,20);
 });
 test('grown search retains snapshot and passes changed cards, final powers and tasks through UI',async()=>{
   const c=dailyContext(),marks={a:{key:'a',source:'owned',overwrite:true,changedFields:['skills']}};
@@ -60,7 +60,8 @@ test('grown search retains snapshot and passes changed cards, final powers and t
     card:(x,pos,r,a,manual)=>{if(a)assert.equal(a,marks[x.s.key]);return `${x.s.key}:${a?'grown':'current'}:${a?200:manual?.final?.power||100}`;},
     growthTodoRow:(a,name)=>`task:${name}:${a.changedFields.join(',')}`});
   await c.guildDailyStart();assert.equal(c.GSR.growth.snapshot,snapshot);
-  const out=UI.html(c.GSR,{...cx,cards:c.guildDailyCards});
+  c.seasonBreakBar=()=>'';vm.runInContext(fn(page,'seasonTeam','function seasonBreakBar'),c);
+  const out=UI.html(c.GSR,{...cx,cards:(t,s)=>c.seasonTeam(t,false,s)});
   assert(out.includes('a:grown:200'));assert(out.includes('b:current:200'));assert(out.includes('task:a:skills'));
   assert(out.includes('a:current:100'));assert.equal(c.LEADKEY,'before');
 });

@@ -42,7 +42,7 @@ async function checks(src=source){
     assert.deepEqual(plain(c.DIRECT.draft.slots.map(s=>s.key)),t.order);assert.equal(c.DIRECT.draft.leader,t.leaderKey);
     assert.equal(c.DIRECT.draft.brk.name,t.brk);assert.deepEqual(plain(c.GS.sel),{level:t.level,tiers:t.tiers,support:t.sup});
     assert.equal(Number(elements.stage.value),i);assert.equal(c.DIRECT.guildSearchSource.partial,i===1);
-    assert.equal(c.DIRECT.guildSearchSource.signature,t.signature);
+    assert.equal(c.DIRECT.guildSearchSource.signature,t.signature);assert.equal(c.DIRECT.guildSearchSource.team,i+1);
   }
   assert(writes.every(([k])=>['guild.v3.30112','direct.v1'].includes(k)));
   assert(!('signature' in writes.find(([k])=>k==='direct.v1')[1]),'session metadata does not leak to stored/shared draft');

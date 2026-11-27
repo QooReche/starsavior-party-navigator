@@ -87,7 +87,7 @@ for(const file of ['party_template.html','index.html']){
   ['<button id="growth-hint" type="button" class="ux-help"','<button type="button" class="ux-help" data-help="중복">ⓘ</button><button id="growth-hint" type="button" class="ux-help"',checkHelp],
   ['게임 이미지·만화의 권리는','게임 이미지의 권리는',checkGwen],
   ['class="notice update-notice"','class="notice"',checkNotice],
-  ['토벌 의뢰 21·22단계 반영','토벌 의뢰 21·22단계 반영 및 모든 신규 적과 스킬 상세 안내',checkNotice],
+  ['첫 팀 자리·리더 비교 보장','첫 팀 자리·리더 비교 보장 및 모든 신규 적과 스킬 상세 안내와 탐색 단계별 설명',checkNotice],
   ['background:color-mix','color:color-mix',checkNotice],
   ['border:1px solid var(--acc);border-radius:8px','border:0;border-radius:0',checkNotice],
   ["document.getElementById('update-history').open=true","document.getElementById('update-history').open=false",checkNotice],
@@ -97,7 +97,7 @@ for(const file of ['party_template.html','index.html']){
  ]){assert(page.includes(from));assert.throws(()=>check(page.replace(from,to),file),{code:'ERR_ASSERTION'},`${file}: mutation caught: ${from}`);check(page,file);}
  assert.equal((page.match(/data-k="update-notice"/g)||[]).length,1);
  assert.match(page,/<\/header>\s*<p class="notice update-notice" data-k="update-notice">[^\n]*<\/p>\s*<p class="notice" data-k="notice">모의 전투 결과라 실제 플레이와 다를 수 있음/,`${file}: update directly above the original guidance`);
- assert.match(page,/<summary>업데이트 내역\(11\/26\)<\/summary>11\/26:[^<]+<br>11\/21:[^<]+<br>11\/19:[^<]+<br>11\/15:[^<]+<br>11\/12: 신규 구원자 길레/);
+ assert.match(page,/<summary>업데이트 내역\(11\/27\)<\/summary>11\/27:[^<]+<br>11\/26:[^<]+<br>11\/21:[^<]+<br>11\/19:[^<]+<br>11\/15:[^<]+<br>11\/12: 신규 구원자 길레/);
  // Keep the copy action and all four instructions together, in both shipped sources.
  const guide=page.match(/<div class="mi-import-guide">([\s\S]*?)<\/ol>\s*<p class="mut mi-import-fallback">([\s\S]*?)<\/p>\s*<\/div>/);
  assert(guide,`${file}: import guide box and fallback exist`);

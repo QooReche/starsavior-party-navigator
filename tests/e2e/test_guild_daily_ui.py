@@ -40,12 +40,12 @@ SETUP=r'''() => {
 def layout(p,width):
     assert p.evaluate('document.documentElement.scrollWidth<=innerWidth+1'),'horizontal overflow'
     if width==1280:
-        cards=p.locator('#guild-search .rowcards.gs-compact').first.bounding_box()
+        cards=p.locator('#guild-search .rowcards.cs-cards').first.bounding_box()
         head=p.locator('#guild-search .cs-bh').first.bounding_box()
         assert cards['x']<head['x'] and cards['width']>head['width'],'desktop cards must occupy the left column'
     if width==390:
-        boxes=p.locator('#guild-search .rowcards.gs-compact').first.locator('.gc').evaluate_all('(xs)=>xs.map(x=>x.getBoundingClientRect().y)')
-        assert len(boxes)==4 and max(boxes)-min(boxes)<2,boxes
+        boxes=p.locator('#guild-search .rowcards.cs-cards').first.locator('.gc').evaluate_all('(xs)=>xs.map(x=>x.getBoundingClientRect().y)')
+        assert len(boxes)==4 and len(set(round(y) for y in boxes))==2,boxes
 
 def share_flow(browser,base):
     from urllib.parse import urlencode
@@ -83,22 +83,30 @@ def flow(browser,base,width,partial=False):
         assert p.locator('#guild-extra [data-g=set]').count()==0
         assert p.locator('#guild-panel [data-k=gd-sim]').count()==0
         assert p.locator('.seal-stepper').count()==0
+        p.locator('[data-fold=gs-options] > summary').click()
         assert '3장째는 구매 1회 성광석 30' in p.locator('#guild-search').inner_text()
         before=p.evaluate('Object.keys(localStorage).sort()')
         p.locator('[data-gs=start]').click()
         p.wait_for_function('dailyQueue.length>0||GSR.phase==="err"')
         assert p.evaluate('GSR.phase==="run"'),p.evaluate('GSR.msg')
+        p.evaluate('window.savedDailyEta=GSR.eta;window.dailyEtaTicks=0;GSR.eta={estimate(){dailyEtaTicks++;return {ready:true,remainSec:80};}}')
+        p.wait_for_function('dailyEtaTicks>0',timeout=3000)
+        assert '남은 시간' in p.locator('[data-k=gs-eta]').text_content()
+        p.evaluate('GSR.eta=savedDailyEta')
         p.evaluate('delete guildDailyDateTick.day;guildDailyDateTick()')
-        assert '날짜 바뀜' not in p.locator('[data-k=gs-day]').inner_text(),'first tick is not a reset'
+        assert '날짜 바뀜' not in p.locator('[data-k=gs-day]').text_content(),'first tick is not a reset'
         p.evaluate('window.stopNode=document.querySelector("[data-gs=partial]");dailyStep()')
         p.wait_for_timeout(250)
         assert p.evaluate('stopNode===document.querySelector("[data-gs=partial]")'),'progress replaced controls'
-        assert p.locator('#guild-search [role=progressbar]').count()==1
+        assert p.locator('#guild-search [role=progressbar]').count()==0
+        assert '단계 · ' in p.locator('[data-k=gs-step]').text_content()
         p.evaluate('dailyFlush()')
         p.wait_for_function('GSR.phase==="done"',timeout=20000)
         assert p.evaluate('GSR.teams.length===1 && GSR.teams[0].kind==="ex"')
         assert p.evaluate("GSR.teams[0].prog>0 && GSR.teams[0].brk==='스타피어서' && GSR.teams[0].brkLv===7")
         assert p.evaluate("dailyPosts.some(m=>m.teams.some(t=>t.options.break_skill?.name==='스타피어서'&&t.options.break_skill.level===7))")
+        assert p.locator('[data-gs=follow]').bounding_box()['y']<p.locator('#guild-search .cs-boss').first.bounding_box()['y']
+        assert p.locator('#guild-search .cg-tab').count()==1
         first=p.evaluate('JSON.stringify(GSR.teams[0])')
         if partial:p.evaluate('dailyStopStage=7')
         p.locator('[data-gs=follow]').click()
@@ -112,7 +120,10 @@ def flow(browser,base,width,partial=False):
         assert p.locator('#guild-search .cs-boss').count()==2
         assert p.evaluate('Object.keys(localStorage).sort()')==before,'daily added persistence'
         layout(p,width)
-        if partial:assert '자리·리더 미평가' in p.locator('#guild-search').inner_text()
+        if partial:
+            assert p.evaluate('GSR.teams[1].evaluation.placementComplete===false')
+            assert '중단함 · 여기까지 찾은 결과' in p.locator('#guild-search').inner_text()
+            assert '자리·리더 미평가' not in p.locator('#guild-search').inner_text()
         saved=p.evaluate('JSON.stringify(GSR.teams)')
         p.locator('[data-gs=edit]').nth(1).click()
         p.wait_for_function('DIRECT.mode==="direct" && !!DIRECT.values')
@@ -123,7 +134,10 @@ def flow(browser,base,width,partial=False):
         assert p.evaluate('guildOptions().step===GSR.teams[1].step && guildOptions().support===GSR.teams[1].sup')
         assert p.evaluate('guildOptions().level===GSR.teams[1].level')
         assert p.evaluate('DIRECT.draft.brk===null || DIRECT.draft.brk.name===GSR.teams[1].brk')
-        if partial:assert '자리·리더 미평가' in p.locator('#direct-guild-source').inner_text()
+        if partial:
+            assert p.evaluate('DIRECT.guildSearchSource.flags.includes("자리·리더 미평가")')
+            assert '중단한 결과' in p.locator('#direct-guild-source').inner_text()
+            assert '자리·리더 미평가' not in p.locator('#direct-guild-source').inner_text()
         assert p.evaluate('new URL(shareUrl()).searchParams.get("go")!==null'),'share go lost'
         p.evaluate("directNavigate('reco')")
         assert p.evaluate('JSON.stringify(GSR.teams)')==saved
@@ -139,10 +153,10 @@ def flow(browser,base,width,partial=False):
         # Date warning, closed-day input, and one-team/shortfall preview.
         p.evaluate("Date.now=()=>Date.parse('2026-11-27T04:00:01+09:00');guildDailyDateTick()")
         assert '날짜 바뀜' in p.locator('#guild-search').inner_text()
-        assert '금요일 · EX 닫힘' in p.locator('[data-k=gs-day]').inner_text()
-        assert '다음 EX는 토요일' in p.locator('[data-k=gs-day]').inner_text()
+        assert '금요일 · EX 닫힘' in p.locator('[data-k=gs-day]').text_content()
+        assert '다음 EX는 토요일' in p.locator('[data-k=gs-day]').text_content()
         p.evaluate('dailyAuto=false;dailyQueue=[];D.guild.search.poolSize=4;GSR.phase="idle";renderGuildSearch(true)')
-        assert '오늘 편성 찾기 (1팀)' in p.locator('#guild-search').inner_text()
+        assert p.locator('[data-gs=start]').inner_text()=='오늘 편성 찾기'
         # Early stop has no fake partial result.
         p.locator('[data-gs=start]').click();p.wait_for_function('dailyQueue.length>0')
         p.locator('[data-gs=partial]').click();p.wait_for_function('GSR.phase==="idle"')
@@ -160,6 +174,11 @@ def flow(browser,base,width,partial=False):
             p.locator('[data-fold=gs-grown] > summary').click()
             assert p.locator('[data-fold=gs-grown] .gc').count()==4
             assert p.locator('[data-fold=gs-grown] .growth-tasks').is_visible()
+            cards=p.locator('[data-fold=gs-grown] .cs-cards').bounding_box()
+            tasks=p.locator('[data-fold=gs-grown] .growth-tasks').bounding_box()
+            foot=p.locator('[data-fold=gs-grown] .cs-foot').bounding_box()
+            assert tasks['width']>=cards['width'] and tasks['y']>=cards['y']+cards['height']
+            assert foot['y']<cards['y']+cards['height'],'grown editor stays beside the cards'
             p.locator('[data-gs=edit][data-grown=true]').click()
             assert p.evaluate('DIRECT.draft.slots.every(s=>s.grown)')
         assert not p.errors,p.errors

@@ -12,16 +12,18 @@ function guildDailyPreview(){
   if(growthEnabled())cx.growthResults=profile.results;
   return GuildDaily.plan(cx);
 }
-function guildDailyCards(t,snapshot=null){
-  const before=LEADKEY;LEADKEY=t.leaderKey||t.order[0];
-  const order=[2,0,1,3].map(ix=>t.order[ix]),marks=snapshot?.changes||{};
-  try{return `<div class="rowcards gs-compact cs-cards">${order.map((k,i)=>card({s:BYKEY[k]},i===0||i===3?'back':'front',null,marks[k]||null,
-    snapshot&&!marks[k]?{leader:LEADKEY,final:snapshot.profile.results[k]}:null)).join('')}</div>`+
-    (snapshot?`<div class="growth-tasks">${order.map(k=>marks[k]?growthTodoRow(marks[k],BYKEY[k].name):'').join('')}</div>`:'');}finally{LEADKEY=before;}
+function guildDailySummary(st,gwen=''){
+  const teams=st.teams||[],names=GuildDailyUI.teamNames(teams);
+  const bosses=teams.map((t,i)=>({key:'t'+i,name:names[i],short:names[i],label:names[i]}));
+  const state={active:'t0',teams:Object.fromEntries(teams.map((t,i)=>['t'+i,{level:0,draft:GuildDailyUI.draft(t)}]))};
+  const summary={total:st.sum,done:teams.length,teams:Object.fromEntries(teams.map((t,i)=>['t'+i,
+    {status:'done',score:t.score,clear:t.clear,mode:'top',other:t.mean,levelText:GuildDailyUI.levelText(t)}]))};
+  return CosmoDirectUI.summaryHtml({state,season:{bosses,levelMax:0},roster:R,summary},
+    {gwen,sumKey:'gs-score',tabsKey:'gs-team-summary',totalLabel:`${teams.length}팀 합계`});
 }
 function guildDailyHtml(){return GuildDailyUI.html(GSR,{G:D.guild,esc,hasInfo:!!MI.info,sig:guildDailySig(),plan:guildDailyPreview(),
-  cards:guildDailyCards,breakBar:t=>seasonBreakBar(t,true),label:k=>BYKEY[k]?.name||k,say:Ux.gwenSay,
-  work:()=>GwenStage.slot('guildSearch','board'),report:()=>GwenStage.slot('guildSearch','board')+GwenStage.slot('guildSearch','result'),error:Ux.gwenError});}
+  cards:(t,snapshot)=>seasonTeam(t,false,snapshot),summary:st=>guildDailySummary(st,GwenStage.slot('guildSearch','result')),
+  work:()=>GwenStage.slot('guildSearch','board'),report:()=>GwenStage.slot('guildSearch','board'),error:Ux.gwenError});}
 function guildDailyRelease(target=GSR){target.session?.close();target.session=null;}
 function guildDailyInput(){
   if(GSR.session&&GSR.phase!=='run'&&GSR.sig!==guildDailySig())guildDailyRelease();
@@ -71,7 +73,7 @@ function guildDailyFromSearch(index,grown=false){
   $('stage').value=String(stageIndex);
   GS.sel=GuildView.normSel(D.guild,{level:t.level,tiers:t.tiers,support:t.sup});LS.set(guildStoreKey(),GS.sel);
   DIRECT.undo=DIRECT.draft;DIRECT.draft=DirectParty.draft(GuildDailyUI.draft(t,grown));DIRECT.revision++;
-  DIRECT.guildSearchSource={season:D.guild.season.id,date:t.date||source.plan.day.date,flags:GuildDailyUI.flags(t),partial:!!t.evaluation?.partial,signature:t.signature};
+  DIRECT.guildSearchSource={team:index+1,season:D.guild.season.id,date:t.date||source.plan.day.date,flags:GuildDailyUI.flags(t),partial:!!t.evaluation?.partial,signature:t.signature};
   directSave();saveSel();showInfo();showPow();condChanged();directNavigate('direct');guildDailySourcePaint();
 }
 function guildDailySourcePaint(){
@@ -79,8 +81,8 @@ function guildDailySourcePaint(){
   if(!on){if(el)el.hidden=true;return;}
   if(!el){el=document.createElement('p');el.id='direct-guild-source';$('direct-panel').prepend(el);}
   const changed=source.date!==GuildView.gameDay(D.guild).date;
-  el.className=source.partial||source.flags.length||changed?'gd-warn':'gd-small';
-  el.hidden=false;el.textContent=['오늘 편성 찾기에서 가져옴',source.partial?'부분 결과':'',...source.flags,changed?'날짜 바뀜 · '+source.date+' 출정 기준':''].filter(Boolean).join(' · ');
+  el.className=source.partial||changed?'gd-warn':'gd-small';
+  el.hidden=false;el.textContent=[`오늘 편성 찾기 ${source.team}팀에서 가져옴`,source.partial?'중단한 결과':'',changed?'날짜 바뀜 · '+source.date+' 출정 기준':''].filter(Boolean).join(' · ');
 }
 function guildDailyDateTick(){
   if(D.guild?.search?.preset!=='daily'||contents[$('content').value]?.key!=='guild')return;
