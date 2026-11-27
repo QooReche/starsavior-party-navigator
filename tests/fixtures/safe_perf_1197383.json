@@ -1,0 +1,955 @@
+{
+  "commit": "1197383",
+  "cases": {
+    "moon": [
+      {
+        "seed": 1,
+        "sha256": "ea9970dde5ef0810fbdb952f7189e83eb1b020eab82c634fdc3a1f39609baea1",
+        "raw": [
+          [
+            "clear",
+            1.6810617490911728,
+            14,
+            1.0
+          ]
+        ],
+        "coverage": {
+          "waves": 2,
+          "summons": 0,
+          "actions": 14,
+          "progress": 1.0,
+          "via": {
+            "trigger": 2,
+            "reaction": 1
+          },
+          "state": "1a45179337b4782b448acae3c713bff858ecbe2cce0c47ef20a29b6f52a84218"
+        }
+      },
+      {
+        "seed": 17,
+        "sha256": "12f988c7e6514b3c317577b39df92e49d5a1ccdcf724ec22abaab1ee93e42e44",
+        "raw": [
+          [
+            "clear",
+            1.6578730870433425,
+            14,
+            1.0
+          ]
+        ],
+        "coverage": {
+          "waves": 2,
+          "summons": 0,
+          "actions": 14,
+          "progress": 1.0,
+          "via": {
+            "reaction": 1
+          },
+          "state": "2d193ce9dcbb58cf8f0090faf43a415967c6dfdd9c90c28274d0e84f398b21d3"
+        }
+      },
+      {
+        "seed": 20261127,
+        "sha256": "20c60c487598bab7a7863a45f10581e5222b0124f6554fb77cf71f64eaa99ce5",
+        "raw": [
+          [
+            "clear",
+            1.7057470207909984,
+            9,
+            1.0
+          ]
+        ],
+        "coverage": {
+          "waves": 2,
+          "summons": 0,
+          "actions": 9,
+          "progress": 1.0,
+          "via": {},
+          "state": "b9b30feca515b4df54ff8539cba4df7d4f123877c38997bca4642a11c8b6638f"
+        }
+      }
+    ],
+    "sun": [
+      {
+        "seed": 1,
+        "sha256": "a0859a229ef915759e5506839d774f77759404b947755b1e798232fe466b4bab",
+        "raw": [
+          [
+            "clear",
+            3.7996664243532052,
+            40,
+            1.0
+          ]
+        ],
+        "coverage": {
+          "waves": 2,
+          "summons": 0,
+          "actions": 40,
+          "progress": 1.0,
+          "via": {
+            "trigger": 3,
+            "reaction": 3
+          },
+          "state": "fcb4a843a2a3f91a9baa545f3ecdf47ec478c5710febc1a03b7408b27457a3db"
+        }
+      },
+      {
+        "seed": 17,
+        "sha256": "291ac18bf0c5490c34dc49aadc4b7a39953928f50244d6b2afbe291e926de89a",
+        "raw": [
+          [
+            "clear",
+            2.816923385539072,
+            31,
+            1.0
+          ]
+        ],
+        "coverage": {
+          "waves": 2,
+          "summons": 0,
+          "actions": 31,
+          "progress": 1.0,
+          "via": {
+            "reaction": 2
+          },
+          "state": "479e7fa4089e2142735f399fb25c3bdadc7bb967d14e2d0a2f30c4b6470a843b"
+        }
+      },
+      {
+        "seed": 20261127,
+        "sha256": "73508f793cb43e1d85808fd2410b9da73089784be62d98aab4f661b55fc370ec",
+        "raw": [
+          [
+            "wipe",
+            null,
+            null,
+            0.8972889753833977
+          ]
+        ],
+        "coverage": {
+          "waves": 2,
+          "summons": 0,
+          "actions": 24,
+          "progress": 0.8972889753833977,
+          "via": {},
+          "state": "6a2eb372085a6d51718540ac7e5dda0f4227b85d04cb290d496a2b394618edb3"
+        }
+      }
+    ],
+    "wave": [
+      {
+        "seed": 1,
+        "sha256": "581c11c6b708beaacdcb46fb82b1ead34a75d59ce58d385c89ab571335ea736d",
+        "raw": [
+          [
+            "wipe",
+            null,
+            null,
+            0.6000430386909862
+          ]
+        ],
+        "coverage": {
+          "waves": 2,
+          "summons": 0,
+          "actions": 45,
+          "progress": 0.6000430386909862,
+          "via": {
+            "trigger": 2,
+            "reaction": 4
+          },
+          "state": "3b261a08d8c0d3553638e1a9e955a9da6f8bb84236414c87072d635394362b8e"
+        }
+      },
+      {
+        "seed": 17,
+        "sha256": "9bd82b6844b85c0c302377b89b9238d233832a36f6e90abe4094538e55a500a2",
+        "raw": [
+          [
+            "wipe",
+            null,
+            null,
+            0.3447676591503675
+          ]
+        ],
+        "coverage": {
+          "waves": 1,
+          "summons": 0,
+          "actions": 22,
+          "progress": 0.3447676591503675,
+          "via": {
+            "reaction": 1
+          },
+          "state": "aa2a9bbfa64040711c132a8a172113bd2a7c22e13cd49264d5a52e04a80cff99"
+        }
+      },
+      {
+        "seed": 20261127,
+        "sha256": "1110bf369ce3108b464a05808434110bfef3a3f48736110c76753092abed9f09",
+        "raw": [
+          [
+            "wipe",
+            null,
+            null,
+            0.43714339105518873
+          ]
+        ],
+        "coverage": {
+          "waves": 1,
+          "summons": 0,
+          "actions": 12,
+          "progress": 0.43714339105518873,
+          "via": {
+            "trigger": 1
+          },
+          "state": "d483e0789c60ff8835c9af3ca7da444a00fac6e6c3d909b54dbb0c79b0972ff8"
+        }
+      }
+    ],
+    "guild30112-1": [
+      {
+        "seed": 1,
+        "sha256": "df1f220d0dad3c4c3ae03b0757f397293310711569b6991ac5920d6361f561d8",
+        "raw": [
+          [
+            "clear",
+            1.1834488588334744,
+            5,
+            1.0,
+            3375
+          ]
+        ],
+        "coverage": {
+          "waves": 2,
+          "summons": 0,
+          "actions": 5,
+          "progress": 1.0,
+          "via": {
+            "trigger": 1
+          },
+          "state": "89160b890dcf7e6e1e99bdce6a1ed707bade4ee755e4d0b5c99472961c58878b"
+        }
+      },
+      {
+        "seed": 17,
+        "sha256": "f6b857e739fa32b5c5feddb06c03cdd26d9ac666970877fc503e7476e7f20f8c",
+        "raw": [
+          [
+            "clear",
+            1.086316533207725,
+            2,
+            1.0,
+            3375
+          ]
+        ],
+        "coverage": {
+          "waves": 2,
+          "summons": 0,
+          "actions": 2,
+          "progress": 1.0,
+          "via": {},
+          "state": "79c05152bd32e5369fcba1d2dcbea7f0194df1ff03f0e7d4f4db6a8e0fa43e24"
+        }
+      },
+      {
+        "seed": 20261127,
+        "sha256": "61b5f58b8bd00c75bd6b48fe414cd144851315dc1963bdd633929e58a1bb846a",
+        "raw": [
+          [
+            "clear",
+            1.1627906976744184,
+            2,
+            1.0,
+            3375
+          ]
+        ],
+        "coverage": {
+          "waves": 2,
+          "summons": 0,
+          "actions": 2,
+          "progress": 1.0,
+          "via": {},
+          "state": "811332e40dea32baca04ee8e3237789e264b4cd27842a36af4c43c1117bf6d5c"
+        }
+      }
+    ],
+    "guild30112-2": [
+      {
+        "seed": 1,
+        "sha256": "4ec29a6677286cf6132973e60899b3c6a903a057ec762d95a370ebd05d65d4ae",
+        "raw": [
+          [
+            "clear",
+            1.2015586149310353,
+            7,
+            1.0,
+            3750
+          ]
+        ],
+        "coverage": {
+          "waves": 2,
+          "summons": 0,
+          "actions": 7,
+          "progress": 1.0,
+          "via": {
+            "trigger": 1
+          },
+          "state": "b5fe9072fa07ededecfe3acbaf45dad6f36b13795e222f30528f3f227bd04b67"
+        }
+      },
+      {
+        "seed": 17,
+        "sha256": "4dbd31d8d38d2bb1c89de46f52898e4408e35f38354858c986c3817001d4bd6b",
+        "raw": [
+          [
+            "clear",
+            1.1599266769101764,
+            4,
+            1.0,
+            3750
+          ]
+        ],
+        "coverage": {
+          "waves": 2,
+          "summons": 0,
+          "actions": 4,
+          "progress": 1.0,
+          "via": {},
+          "state": "c9c899ca33e1f3a39a5c389b96b1f8c938ba705023b2d9529c22188ad136bc98"
+        }
+      },
+      {
+        "seed": 20261127,
+        "sha256": "2a94a90be0f1c422dd2365497bbc4bb4ac4d5248eb01251479ba84a525ff8537",
+        "raw": [
+          [
+            "clear",
+            1.1627906976744184,
+            2,
+            1.0,
+            3750
+          ]
+        ],
+        "coverage": {
+          "waves": 2,
+          "summons": 0,
+          "actions": 2,
+          "progress": 1.0,
+          "via": {},
+          "state": "5c9136fd89ee71f21853d6992a775407c54c161d5a7f52fdb06dd4506e032369"
+        }
+      }
+    ],
+    "guild30112-3": [
+      {
+        "seed": 1,
+        "sha256": "39365a2c1bb2a19a6e3c67aaf3c8dec92093fedbfda4a618d5a556fa892390b2",
+        "raw": [
+          [
+            "clear",
+            1.5976651238067752,
+            9,
+            1.0,
+            4500
+          ]
+        ],
+        "coverage": {
+          "waves": 2,
+          "summons": 0,
+          "actions": 9,
+          "progress": 1.0,
+          "via": {
+            "trigger": 1
+          },
+          "state": "28fbb5c05e3d549f0f202582315ff5a762d19e097846b3e4ebe61c35ffd61b29"
+        }
+      },
+      {
+        "seed": 17,
+        "sha256": "ef2ea9b942cff721216a67f99e6b3124320450fc448869aff31283be018674a1",
+        "raw": [
+          [
+            "clear",
+            1.1972222743944532,
+            6,
+            1.0,
+            4500
+          ]
+        ],
+        "coverage": {
+          "waves": 2,
+          "summons": 0,
+          "actions": 6,
+          "progress": 1.0,
+          "via": {},
+          "state": "2b45c64c3ec92ada2e484f696080685d9f12f39f2a1718a8fd5900928aebb597"
+        }
+      },
+      {
+        "seed": 20261127,
+        "sha256": "45da085003afe4ca28a6ef3eb3325d8158ce1580ff4e6963f491ccb80378b9c6",
+        "raw": [
+          [
+            "clear",
+            1.1731457272602173,
+            3,
+            1.0,
+            4500
+          ]
+        ],
+        "coverage": {
+          "waves": 2,
+          "summons": 0,
+          "actions": 3,
+          "progress": 1.0,
+          "via": {},
+          "state": "2e024a4b4bd2a675a5275a720f9643ed940d3f4c19c2c31404f5c211dd3ee1a6"
+        }
+      }
+    ],
+    "guild30112-4": [
+      {
+        "seed": 1,
+        "sha256": "efcabda0f93b11a8822fe06a4ee9a29d7488106278952810286a270f52764fb3",
+        "raw": [
+          [
+            "clear",
+            2.1134646019137464,
+            19,
+            1.0,
+            6000
+          ]
+        ],
+        "coverage": {
+          "waves": 2,
+          "summons": 0,
+          "actions": 19,
+          "progress": 1.0,
+          "via": {
+            "trigger": 2,
+            "reaction": 1
+          },
+          "state": "754212b0277846acb6cff7a2297a99b30b1c19239c3c9957ead73a460212ba69"
+        }
+      },
+      {
+        "seed": 17,
+        "sha256": "996ee9eeebfd8aee88ab77f3d7be54f81abd08de9b2a4ad6a758cc9c86ec93b4",
+        "raw": [
+          [
+            "clear",
+            1.8263908078771083,
+            12,
+            1.0,
+            6000
+          ]
+        ],
+        "coverage": {
+          "waves": 2,
+          "summons": 0,
+          "actions": 12,
+          "progress": 1.0,
+          "via": {
+            "reaction": 1
+          },
+          "state": "bb1c126b0c6dbe063866413157e34383005966c2901c3ea842ba4ad7fcdf2f5c"
+        }
+      },
+      {
+        "seed": 20261127,
+        "sha256": "ca4ec30bdb56d082f43013b07fb979ecbd99c7036f2f96244b9b9cd50078ea83",
+        "raw": [
+          [
+            "clear",
+            1.1987630112108347,
+            5,
+            1.0,
+            6000
+          ]
+        ],
+        "coverage": {
+          "waves": 2,
+          "summons": 0,
+          "actions": 5,
+          "progress": 1.0,
+          "via": {},
+          "state": "bba42595daa86ec7ff902a43ae3f568947ff68733872e3b453bfd9a0b10d34ef"
+        }
+      }
+    ],
+    "guild30112-5": [
+      {
+        "seed": 1,
+        "sha256": "7a4355e307236ba32868050c6088db9e1c9c486c429a1f4a988d52cfdc27e2be",
+        "raw": [
+          [
+            "clear",
+            2.4972478766483923,
+            22,
+            1.0,
+            9000
+          ]
+        ],
+        "coverage": {
+          "waves": 2,
+          "summons": 0,
+          "actions": 22,
+          "progress": 1.0,
+          "via": {
+            "trigger": 2,
+            "reaction": 2
+          },
+          "state": "610ba0f01a47cd2dae08fbc789cf56f89499e507ba4f8e77a0e95175177ea3f0"
+        }
+      },
+      {
+        "seed": 17,
+        "sha256": "59e92b56dddfc28886644fd26efdcd6037cc571cdf9128588a1dee497f3c8f4b",
+        "raw": [
+          [
+            "clear",
+            2.904524325503356,
+            29,
+            1.0,
+            9000
+          ]
+        ],
+        "coverage": {
+          "waves": 2,
+          "summons": 0,
+          "actions": 29,
+          "progress": 1.0,
+          "via": {
+            "reaction": 2
+          },
+          "state": "219ce479805ca9625fc186cfe2711e8272a70994682e02fa95028a073fc4fd36"
+        }
+      },
+      {
+        "seed": 20261127,
+        "sha256": "2bbd2fe2064d4769a18cf850df92d02bd8bf28e1099b1ab87f8ade56422837ca",
+        "raw": [
+          [
+            "clear",
+            2.1201615175523587,
+            13,
+            1.0,
+            9000
+          ]
+        ],
+        "coverage": {
+          "waves": 2,
+          "summons": 0,
+          "actions": 13,
+          "progress": 1.0,
+          "via": {
+            "trigger": 1
+          },
+          "state": "ae61fc7d6f8cf8cb92dcb733d4e9172130999f48323375f3e3ef9d82055e6882"
+        }
+      }
+    ],
+    "guild30112-6": [
+      {
+        "seed": 1,
+        "sha256": "167c743499f07b7d8ca5ab10740051b4c7777c9059d4012c365d16e7530321f9",
+        "raw": [
+          [
+            "wipe",
+            null,
+            null,
+            0.5579334763948498,
+            4218
+          ]
+        ],
+        "coverage": {
+          "waves": 2,
+          "summons": 0,
+          "actions": 26,
+          "progress": 0.5579334763948498,
+          "via": {
+            "trigger": 1,
+            "reaction": 1
+          },
+          "state": "9a436f896adc4647938dc7a675f436b4f3ae1125d4d9262c0116d9195046f69f"
+        }
+      },
+      {
+        "seed": 17,
+        "sha256": "a240bce4d06a73dde27bf3619d6ec02656128ddc9a3d463ed136b8dbd239a97c",
+        "raw": [
+          [
+            "wipe",
+            null,
+            null,
+            0.6954420600858369,
+            8063
+          ]
+        ],
+        "coverage": {
+          "waves": 2,
+          "summons": 0,
+          "actions": 29,
+          "progress": 0.6954420600858369,
+          "via": {
+            "reaction": 1
+          },
+          "state": "f90357f394da4a119b9858ec19f440d629bd6aeebf68e5459fa9df64609ceca7"
+        }
+      },
+      {
+        "seed": 20261127,
+        "sha256": "1a4343516cc79057bd53ee08cb6ad0863debe91c35f96b03845358de58f90aa9",
+        "raw": [
+          [
+            "wipe",
+            null,
+            null,
+            0.655881974248927,
+            5407
+          ]
+        ],
+        "coverage": {
+          "waves": 2,
+          "summons": 0,
+          "actions": 15,
+          "progress": 0.655881974248927,
+          "via": {},
+          "state": "ae8f0da70af47c5d3d64ccf0e457f586b26de4d93f70aef7222288d0ea116384"
+        }
+      }
+    ],
+    "guild30112-7": [
+      {
+        "seed": 1,
+        "sha256": "4c234305b0d4df7b04d8859cc19f684853f69eda0b84c844c56a8fa13393125e",
+        "raw": [
+          [
+            "wipe",
+            null,
+            null,
+            0.5143967213114754,
+            4842
+          ]
+        ],
+        "coverage": {
+          "waves": 2,
+          "summons": 0,
+          "actions": 27,
+          "progress": 0.5143967213114754,
+          "via": {
+            "trigger": 2,
+            "reaction": 1
+          },
+          "state": "e570ec1b320fb23497f3784a803810ccb8dd3c82e19e68c9a59289fbde2865d9"
+        }
+      },
+      {
+        "seed": 17,
+        "sha256": "ca533fd68cf4d4211b9f024197a3f123ad700ecf9d9f5ec885fcb585f4b5ebc4",
+        "raw": [
+          [
+            "wipe",
+            null,
+            null,
+            0.5403344262295082,
+            6365
+          ]
+        ],
+        "coverage": {
+          "waves": 2,
+          "summons": 0,
+          "actions": 19,
+          "progress": 0.5403344262295082,
+          "via": {},
+          "state": "7cba98f94ec6fb64cd411f222168558d44c82eeab2c1ca420817a1171b49be89"
+        }
+      },
+      {
+        "seed": 20261127,
+        "sha256": "7d70509899fc7c9d360672fa010cbe8d59d76513b1e38845a9850070b6783c34",
+        "raw": [
+          [
+            "wipe",
+            null,
+            null,
+            0.5620754098360656,
+            5955
+          ]
+        ],
+        "coverage": {
+          "waves": 2,
+          "summons": 0,
+          "actions": 17,
+          "progress": 0.5620754098360656,
+          "via": {},
+          "state": "4af9a34108cad09b811878a66822a9adcda02fc3f35c97ba3a860711b38a28af"
+        }
+      }
+    ],
+    "cosmo": [
+      {
+        "seed": 1,
+        "sha256": "8644c6af9a427821585a984a6211daa913b5586b3f9a64235a5a757747ee9a06",
+        "raw": [
+          [
+            "wipe",
+            null,
+            null,
+            0.285336
+          ]
+        ],
+        "coverage": {
+          "waves": 1,
+          "summons": 0,
+          "actions": 37,
+          "progress": 0.285336,
+          "via": {
+            "trigger": 3,
+            "reaction": 1
+          },
+          "state": "443a2b0d8d713e3a12cad0c67c3e0736abee4ddbc33388bf6b2b853c2fd59d3c"
+        }
+      },
+      {
+        "seed": 17,
+        "sha256": "8023dacc5afdc1ecb2d181d5341f6128759b117c928ba00635db0de93ad32742",
+        "raw": [
+          [
+            "wipe",
+            null,
+            null,
+            0.422737
+          ]
+        ],
+        "coverage": {
+          "waves": 1,
+          "summons": 0,
+          "actions": 42,
+          "progress": 0.422737,
+          "via": {
+            "reaction": 1
+          },
+          "state": "1748d985d59b9ca115cb7f131a2fe7b5ce427c98bdc7800c3cdb7a056042ef1d"
+        }
+      },
+      {
+        "seed": 20261127,
+        "sha256": "2c937d782293b097e308f2e14655c58aefdacbac0c29346c46f8c0389cdc50fa",
+        "raw": [
+          [
+            "wipe",
+            null,
+            null,
+            0.173307
+          ]
+        ],
+        "coverage": {
+          "waves": 1,
+          "summons": 0,
+          "actions": 22,
+          "progress": 0.173307,
+          "via": {},
+          "state": "7899cfd498be69d37a5d165e5b3343355dea6540aea23686284487e8bcf670ed"
+        }
+      }
+    ],
+    "unknown-slots": [
+      {
+        "seed": 1,
+        "sha256": "0b21efa25d11d033e6843e9726230ec3e680fc9f46044c18982fc94bc8aa67fc",
+        "raw": [
+          [
+            "clear",
+            2.1786630447334487,
+            18,
+            1.0
+          ]
+        ],
+        "coverage": {
+          "waves": 1,
+          "summons": 0,
+          "actions": 18,
+          "progress": 1.0,
+          "via": {
+            "trigger": 2
+          },
+          "state": "26418c9818f1c6a8051cf4dc5bd5c0492d91664981887cbda9ec55981147dd0b"
+        }
+      },
+      {
+        "seed": 17,
+        "sha256": "45873e663dfeb2b3b2cbb93bfe98ac6f9127a281a5043e417a8f4981cf6bd3a8",
+        "raw": [
+          [
+            "clear",
+            2.286025565525156,
+            21,
+            1.0
+          ]
+        ],
+        "coverage": {
+          "waves": 1,
+          "summons": 0,
+          "actions": 21,
+          "progress": 1.0,
+          "via": {},
+          "state": "ec484617e18637f88da61b6163c294be8450291050afe7efb692396e5228a5f4"
+        }
+      },
+      {
+        "seed": 20261127,
+        "sha256": "8f4acf9646af998f90095000bfc4be0e77683d7899a31f65ee1185acbaaa6dba",
+        "raw": [
+          [
+            "clear",
+            2.1513821735035212,
+            17,
+            1.0
+          ]
+        ],
+        "coverage": {
+          "waves": 1,
+          "summons": 0,
+          "actions": 17,
+          "progress": 1.0,
+          "via": {
+            "trigger": 2
+          },
+          "state": "c1ccfbdb052963dd1db09024f6beb9379aafac082f6e677231f6fea8c4d92f20"
+        }
+      }
+    ],
+    "summon": [
+      {
+        "seed": 1,
+        "sha256": "0d9b28cef68d7274b594d9cee93588b21e6b9d86f36d17c5194b3788cfecc777",
+        "raw": [
+          [
+            "wipe",
+            null,
+            null,
+            0.004177720362638123
+          ]
+        ],
+        "coverage": {
+          "waves": 1,
+          "summons": 2,
+          "actions": 8,
+          "progress": 0.004177720362638123,
+          "via": {
+            "trigger": 1
+          },
+          "state": "d6413d14d1a30b781d8611435bf4a3a3d5153ff6599b223e63f4d0cca0be5db7"
+        }
+      },
+      {
+        "seed": 17,
+        "sha256": "d7017e0387e419c35a0f5e994b59fbbae34e44b35b7397f6486b265be3438bd9",
+        "raw": [
+          [
+            "wipe",
+            null,
+            null,
+            0.00872915176820688
+          ]
+        ],
+        "coverage": {
+          "waves": 1,
+          "summons": 2,
+          "actions": 11,
+          "progress": 0.00872915176820688,
+          "via": {},
+          "state": "b0ef02d9b24b0e357f24bd1da7bf3a075213b1b952c5a3183ed3da81138523b4"
+        }
+      },
+      {
+        "seed": 20261127,
+        "sha256": "637b79b1a0ab0e3875cda6f48b9529cd4d0daafa017721eb2d5bb96a44bc4235",
+        "raw": [
+          [
+            "wipe",
+            null,
+            null,
+            0.008560751113059125
+          ]
+        ],
+        "coverage": {
+          "waves": 1,
+          "summons": 2,
+          "actions": 11,
+          "progress": 0.008560751113059125,
+          "via": {},
+          "state": "1ad93f25cddd892e2f38ed442e0683be49e17e32d1420a7bab951fb599e12808"
+        }
+      }
+    ],
+    "round-boundary": [
+      {
+        "seed": 1,
+        "sha256": "caed7e903956fb49911dea8c162f5a1f68a0144c1c81e702b77ac1d949bfafa1",
+        "raw": [
+          [
+            "wipe",
+            null,
+            null,
+            0.6000430386909862
+          ]
+        ],
+        "coverage": {
+          "waves": 2,
+          "summons": 0,
+          "actions": 45,
+          "progress": 0.6000430386909862,
+          "via": {
+            "trigger": 2,
+            "reaction": 4
+          },
+          "state": "3b261a08d8c0d3553638e1a9e955a9da6f8bb84236414c87072d635394362b8e"
+        }
+      },
+      {
+        "seed": 17,
+        "sha256": "7e4c5a664b0ea43f2b709d25675b82949de68eb7b74df915dfefda8c05352e28",
+        "raw": [
+          [
+            "wipe",
+            null,
+            null,
+            0.3447676591503675
+          ]
+        ],
+        "coverage": {
+          "waves": 1,
+          "summons": 0,
+          "actions": 22,
+          "progress": 0.3447676591503675,
+          "via": {
+            "reaction": 1
+          },
+          "state": "aa2a9bbfa64040711c132a8a172113bd2a7c22e13cd49264d5a52e04a80cff99"
+        }
+      },
+      {
+        "seed": 20261127,
+        "sha256": "6d27a18ddb1ac7e22f815f23fe46489c77b3f4bc1ae69bbbb9a7358d8ba23577",
+        "raw": [
+          [
+            "wipe",
+            null,
+            null,
+            0.43714339105518873
+          ]
+        ],
+        "coverage": {
+          "waves": 1,
+          "summons": 0,
+          "actions": 12,
+          "progress": 0.43714339105518873,
+          "via": {
+            "trigger": 1
+          },
+          "state": "d483e0789c60ff8835c9af3ca7da444a00fac6e6c3d909b54dbb0c79b0972ff8"
+        }
+      }
+    ]
+  }
+}

@@ -976,12 +976,26 @@ class Battle:
         return self.allies if side == 0 else self.foes
 
     def alive(self, side):
-        pool = [u for u in (self.allies if side == 0 else self.foes) if not u.dead]
+        units = self.allies if side == 0 else self.foes
+        deck = self._game_deck() if side == 0 else None
+        cache = getattr(self, '_living_order', None)
+        if cache is None:
+            cache = self._living_order = {}
+        hit = cache.get(side)
+        # Membership changes only at wave replacement / summon append. Slots are
+        # fixed after spawning; deaths must not invalidate the stable slot order.
+        if hit is None or hit[0] is not units or hit[1] != len(units) or hit[2] != deck:
+            slots = [(self._ALLY_GAME_SLOT.get(u.pos) if deck == 'BATTLE_SLOT_4' else None)
+                     if side == 0 else self._game_slot(u) for u in units]
+            known = sorted(((s, u) for s, u in zip(slots, units) if s is not None), key=lambda p: p[0])
+            unknown = [u for s, u in zip(slots, units) if s is None]
+            hit = (units, len(units), deck, [u for _, u in known], unknown)
+            cache[side] = hit
+        pool = [u for u in units if not u.dead]
         # NKM:992,1032,1217,13021-13023: living teams enumerate the
         # original game slot array. Engine ally positions use a different order.
-        slots = [self._game_slot(u) for u in pool]
-        if all(slot is not None for slot in slots):
-            ordered = [u for _, u in sorted(zip(slots, pool), key=lambda pair: pair[0])]
+        if not any(not u.dead for u in hit[4]):
+            ordered = [u for u in hit[3] if not u.dead]
             if ordered != pool:
                 self.rule_hits['living_slot_order'] += 1
             return ordered
@@ -3155,7 +3169,7 @@ class Battle:
         return getattr(u.d, 'game_slot', None)
 
     def _game_deck(self):
-        d = next((f.d for f in self.foes), None)
+        d = self.foes[0].d if self.foes else None
         return getattr(d, 'game_deck', 'BATTLE_SLOT_4') or 'BATTLE_SLOT_4'
 
     @staticmethod
