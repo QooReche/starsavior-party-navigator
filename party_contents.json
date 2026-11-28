@@ -283,5 +283,26 @@
   "_note": "팀 화력 점수 = 10 x 팀 10턴 기대 피해 / ref95(무작위 4딜러 팀 95백분위), 상한 10. 파티 점수에 weight 를 곱해 더한다. 서포터·디펜더는 직접 화력 대신 아군 피해 증가(g)로 반영. 값은 임의.",
   "weightBoss": 0.6,
   "weightMob": 0.35
+ },
+ "recommendation": {
+  "learnedUnion": {
+   "value": true,
+   "maxScoreCombos": 2000000,
+   "maxOverlapChecks": 2000000,
+   "fallbackMultiplier": 4,
+   "S": 3000,
+   "m": 8,
+   "M": 8,
+   "A": 256,
+   "overlapStarts": 10,
+   "overlapKeep": 8,
+   "folds": 3,
+   "epochs": 40,
+   "ridge": 10,
+   "minCorrelation": 0.1,
+   "missThreshold": 0.04,
+   "note": "일반 추천 후보 전체 훑기 F와 풀 밖 예측 상위 팀의 실제 1판 결과 합집합. 측정 U360과 같은 학습 설정, K는 기존 승격 수.",
+   "outside": 360
+  }
  }
 }

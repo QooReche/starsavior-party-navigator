@@ -52,7 +52,10 @@ const directPause=ms=>new Promise(ok=>setTimeout(ok,ms));
 function recoProgressPaint(task){
   if(task.owner!=='reco-bundle'||task.done||task.cancelled)return;
   let el=$('out').querySelector('[data-bundle-progress]');
-  if(!el){$('out').innerHTML=`<div class="party progress" data-bundle-progress data-state="running"><b class="case-title">추천 편성 확인 중</b><div class="pbar" role="progressbar" aria-valuemin="0" aria-valuemax="100"><i></i></div><p role="status"></p><p class="mut">예선 뒤 상위 팀을 모의 전투함 · 직접 편성과 같은 작업임</p><button type="button" class="sec" data-direct-action="skip" data-kind="reco">건너뛰기</button></div>`;el=$('out').firstElementChild;}
+  if(!el){
+    // The recommendation actions own the live growth checkbox. Keep it before replacing the body.
+    if(typeof growthControlPlace==='function')growthControlPlace(true);
+    $('out').innerHTML=`<div class="party progress" data-bundle-progress data-state="running"><b class="case-title">추천 편성 확인 중</b><div class="pbar" role="progressbar" aria-valuemin="0" aria-valuemax="100"><i></i></div><p role="status"></p><p class="mut">예선 뒤 상위 팀을 모의 전투함 · 직접 편성과 같은 작업임</p><button type="button" class="sec" data-direct-action="skip" data-kind="reco">건너뛰기</button></div>`;el=$('out').firstElementChild;}
   const alert=scrAlertSync(el,task.sc);   // 관측 경보(훑기) — 상태가 바뀔 때만 DOM 을 바꿈
   if(typeof recheckBundle==='function')recheckBundle(el);   // 현장 재조사(자리·리더 비교) 칸
   el.querySelector('[role=status]').textContent=task.message;

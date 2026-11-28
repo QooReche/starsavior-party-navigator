@@ -139,6 +139,7 @@ def main(out=None):
     contents.append({"key": gd.CONTENT_KEY, "name": gd.content_title(gdef), "main": cfg["contents"][gd.CONTENT_NAME]["main"], "parties": gdef["rules"]["partyCount"],
                      "boss": True, "seasonal": True, "seasonId": gdef['season']['id'], "dataVersion": gdef['dataVersion'], "stages": stages_of(gd.foe_content(gdef))})
     out_cfg = {k: cfg[k] for k in ("advantage", "weights", "tagWeights", "breakSkills", "synergy", "power", "gimmick", "seasonBonus", "matchupModes", "damage")}
+    out_cfg["recommendation"] = cfg.get("recommendation", {})
     out_cfg["restrict"] = {"성간 회랑": cfg["contents"]["회랑"]["restrictTabs"]}
     # mc._break_skill_rule: 표 기반 스킬 + 기존 평면 규칙을 쓰는 큐브 예외.
     mc_rules = pr._json(os.path.join(pr.HERE, "battlesim", "rules", "default.json"))["mc"]

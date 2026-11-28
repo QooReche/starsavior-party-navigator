@@ -62,7 +62,7 @@ async function runtime({legacy=false,screen=false}={}){
  const trace=[],responses=[],raw={ver:'synthetic',n:4,prog:.75,clear:.5,t60:.5,ci:[.1,.9],progs:[.2,1,.8,1],via:{coop:.1},raw:[[1,.2],[2,1],[3,.8],[4,1]],unsupported:[{unit:'u0',raw:'synthetic-only'}]};
  const ctx=vm.createContext({UiShared:require('../ui_shared'),console,URL,Date,setTimeout,clearTimeout,SearchExecutor:globalThis.SearchExecutor,
   navigator:{hardwareConcurrency:2},document:{hidden:false},location:{href:'https://synthetic.test/index.html'},
-  SIMQ:{LOAD_MS:180000,res:{},scr:{},meta:{}},RECO:{},CFG:{recommendation:{}},LASTQ:{},
+  SIMQ:{LOAD_MS:180000,res:{},scr:{},meta:{}},RECO:{},CFG:{recommendation:{learnedUnion:{value:false}}},LASTQ:{},
   recoIdentity:()=> 'fixed',recoProgressPaint(){},directResultsPaint(){},simTeamLimit:()=>240000,simRateAdd(){},goalVal:r=>r?.t60,
   RecommendPipeline:require('../recommend_pipeline'),
   Worker:class{postMessage(m){trace.push(plain(m));setImmediate(()=>{if(this.dead)return;const send=x=>this.onmessage({data:{...m,...x}});

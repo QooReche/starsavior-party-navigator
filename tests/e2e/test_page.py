@@ -516,6 +516,28 @@ def test_screen_stop_notice(browser, ctx):
     return ok, '진행 %s / 멈춤 %s / 안내 %r / 폭 %s / 2차 멈춤 %s %r / 끝까지 %s / 안내 사라짐 %s / 오류 %s' % (first, stopped, text, box, mid, text2, more, gone, errs[:2])
 
 
+def test_screen_bundle_controls(browser, ctx):
+    """Starting bundle progress preserves the live controls needed by the final redraw."""
+    for width in (1280, 390):
+        page = open_page(browser, ctx, query='?auto=0&pm=reco', info=SYNTH,
+                         simauto='0', viewport={'width': width, 'height': 900}, wait=False)
+        wait_myinfo(page)
+        settle(page)
+        page.evaluate("directNavigate('direct');directNavigate('reco')")
+        state = page.evaluate('''() => {
+          const input=$('assume-growth');input.checked=true;
+          const hosted=$('out').contains(input);
+          recoProgressPaint({owner:'reco-bundle',message:'예선 준비 중',progress:0,request:1});
+          const preserved=$('assume-growth')===input && input.isConnected && input.checked;
+          if(preserved)run(true);
+          return {hosted,preserved,redrawn:preserved && $('assume-growth')===input && input.checked};
+        }''')
+        assert state == dict(hosted=True, preserved=True, redrawn=True), state
+        assert not ctx.errors, ctx.errors
+        page.close()
+    return True, 'bundle progress and final redraw preserve the live growth checkbox at 1280/390px'
+
+
 def test_sim_auto_and_override(browser, ctx):
     from auto_calculation import fake_setup, drain
     page = open_page(browser, ctx, info=SYNTH, simauto="0", manual_sim=False,
@@ -2710,6 +2732,7 @@ TESTS.append(test_guild_search)
 TESTS.append(test_request_diagnostics)
 TESTS.append(test_sim_timeout_partial)
 TESTS.append(test_screen_stop_notice)
+TESTS.append(test_screen_bundle_controls)
 TESTS.append(test_guild_search_dropped)
 TESTS.append(test_guild_season_rollover)
 TESTS.append(test_break_skill_select)

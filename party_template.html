@@ -284,7 +284,7 @@ summary{padding:9px 4px}
 </style><link rel="stylesheet" href="ux.css"><link rel="stylesheet" href="forced.css"><link rel="stylesheet" href="recheck.css"></head><body><main>
 <header class="site-head"><h1><img class="gwen-head" src="assets/ui_icons/gwen_header_72.png" width="36" height="36" alt="" aria-hidden="true"><span>파티 편성 네비게이터 <small>베타</small></span></h1><span class="mi-head"><span id="mi-chip" class="mi-chip"></span><button id="mi-open-import" type="button" class="sec mi-import">내 정보 불러오기</button><button id="mi-send" type="button" class="sec mi-import" aria-live="polite" aria-label="내 정보 보내기" title="내 구원자 정보만 담은 링크를 복사함. 받은 사람은 휴대폰에서 열어 스테이지를 직접 골라 계산" hidden><span class="mi-send-long">내 정보 </span>보내기</button></span>
 <nav class="mi-tabs" aria-label="화면"><button id="tab-reco" type="button" aria-pressed="true">추천</button><button id="tab-info" type="button" aria-pressed="false">내 구원자</button></nav></header>
-<p class="notice update-notice" data-k="update-notice">📢 11/27 업데이트 · 길드 편성 찾기 화면 정리 · 자리·리더 비교 누락 수정 <a href="#update-history" onclick="document.getElementById('update-history').open=true">자세히</a></p>
+<p class="notice update-notice" data-k="update-notice">📢 11/28 업데이트 · 어려운 스테이지 추천 강화 · 다시 계산 속도 개선 <a href="#update-history" onclick="document.getElementById('update-history').open=true">자세히</a></p>
 <p class="notice" data-k="notice">모의 전투 결과라 실제 플레이와 다를 수 있음 <button type="button" class="ux-help" aria-label="계산 방식 설명" aria-expanded="false" data-help="내 구원자 수치로 모의 전투를 여러 판 돌려 클리어한 비율을 보여줌. 계산에 쓰는 성장표와 게임 패치는 차이가 있을 수 있음. 가정·출처·근거는 각 결과의 ⓘ와 더 보기에서 확인 가능.">ⓘ</button></p>
 <div id="shared-bar" class="shared-bar" hidden></div>
 <div class="panel input-panel">
@@ -368,7 +368,7 @@ summary{padding:9px 4px}
   <label>신뢰<select id="gconf"><option value="">확인+추정</option><option value="확인">확인만</option></select></label>
  </div>
  <div id="glegend"></div><div id="cy"></div><div id="cyinfo" class="mut">선이나 구원자를 눌러 확인.</div></div>
-<p class="mut disclaimer">비공식 팬 도구 · 게임사와 무관</p><details class="note" id="update-history"><summary>업데이트 내역(11/27)</summary>11/27: 길드 «오늘 편성 찾기» 화면을 코스모 게이트와 같은 틀로 정리(시작 전 예상 시간 표시 삭제, 이어서 찾기·다시 찾기를 결과 위쪽으로, 알리시아 지원은 팀마다 한 줄) · EX 없는 날 첫 팀의 자리·리더 비교가 빠지던 문제 수정 · 코스모 결과의 다시 찾기·상세도 위쪽으로<br>11/26: 길드 방어전 프리즘 시즌 5(카본펑크 칸) · 시즌 지원 효과 갱신 · 길드 «오늘 편성 찾기» 개편(EX 한 팀 기본, 남은 인장으로 일반 팀 이어서 찾기, 자리·리더 비교, 남은 시간·중단) · 토벌 의뢰 3종의 21·22단계와 페르세스 소환 반영 · 게임에 없는 길드 선택 효과·기준표 숨김 · 이전 길드 시즌 공유 링크는 만료 안내<br>11/21: 전투 엔진을 PC 클라이언트 기준으로 대거 정정(발동형 효과의 재발동 시점·스킬 쿨 증감·추가 피해 순서·브레이크 스킬 회복/분담·보스 기믹: 모굴루스·심해의 폭군·시엔·벨그라스 등) · 직접 편성 「자리 자동 배치」(자리·리더 24가지 모의 전투 비교) · 코스모 추천의 역할 최소 인원 제한 폐지 · 「모의 전투 자동 실행 끄기」·「섹터/지역」 필터 정리<br>11/19: 코스모 게이트 프리즘 시즌 8(모굴루스·바스커빌의 괴수·괴리의 표상, EX 「폭주 : 장벽」) · 코스모 직접 편성(3파티, 중복 금지·팀별 리더/육성/브레이크/난이도·합계) · 자동 3보스 찾기 요약 통일·「직접 편성에서 고치기」·후보 겹침 시 자동 확대 재시도 · 구원자 자동 대상 PC 클라 기준 교정(13명) · 그웬 연출 통일<br>11/15: 전투 판정을 게임 클라 기준으로 정정(버프 해제·면역·회피·지속 피해·행동 순서·전투력 차이 보정) · 클리어 확률이 낮을 때 결과 카드에 안내 · 코스모 힐데 적 정보 추가 · 화력 지표 재계산<br>11/12: 신규 구원자 길레·편애의 마녀 반영 · 격파된 아군도 다음 턴 행동(클라 기준) · 길드 방어전은 시즌 종료로 미오픈</details><details class="note"><summary>출처·면책</summary>출처: 가이드 DB · databook · 나무위키.<br>게임 업데이트·밸런스 패치는 바로 반영되지 않음(관리자가 자료를 갱신한 뒤 반영).<br>그웬 길 배경: 게임 클라이언트 배경 이미지(© STUDIOBSIDE).<br>조사 배너: 자율 여정 타이틀 스타일을 참고한 자체 제작 글자 그림(Noto Sans KR, SIL OFL 1.1).<br>게임 이미지·만화의 권리는 원 권리자에게 있음.<br>저장소 라이선스는 게임 이미지·만화에 적용되지 않음.</details>
+<p class="mut disclaimer">비공식 팬 도구 · 게임사와 무관</p><details class="note" id="update-history"><summary>업데이트 내역(11/28)</summary>11/28: 빠른 계산으로 깰 팀이 없는 어려운 스테이지에서 추천 후보 24명 밖의 보유 구원자 조합도 함께 확인(학습으로 고른 조합을 직접 모의 전투, 시간 약 5~30% 증가) · 스테이지·조건을 바꾼 뒤 다시 계산할 때 계산 엔진을 새로 준비하지 않아 더 빨리 시작 · 길드·코스모 «다시 찾기»도 엔진 재준비 없이 바로 시작, 육성 전후 같은 전투는 다시 계산하지 않음 · 전투 계산 속도 소폭 개선(결과 동일)<br>11/27: 길드 «오늘 편성 찾기» 화면을 코스모 게이트와 같은 틀로 정리(시작 전 예상 시간 표시 삭제, 이어서 찾기·다시 찾기를 결과 위쪽으로, 알리시아 지원은 팀마다 한 줄) · EX 없는 날 첫 팀의 자리·리더 비교가 빠지던 문제 수정 · 코스모 결과의 다시 찾기·상세도 위쪽으로<br>11/26: 길드 방어전 프리즘 시즌 5(카본펑크 칸) · 시즌 지원 효과 갱신 · 길드 «오늘 편성 찾기» 개편(EX 한 팀 기본, 남은 인장으로 일반 팀 이어서 찾기, 자리·리더 비교, 남은 시간·중단) · 토벌 의뢰 3종의 21·22단계와 페르세스 소환 반영 · 게임에 없는 길드 선택 효과·기준표 숨김 · 이전 길드 시즌 공유 링크는 만료 안내<br>11/21: 전투 엔진을 PC 클라이언트 기준으로 대거 정정(발동형 효과의 재발동 시점·스킬 쿨 증감·추가 피해 순서·브레이크 스킬 회복/분담·보스 기믹: 모굴루스·심해의 폭군·시엔·벨그라스 등) · 직접 편성 「자리 자동 배치」(자리·리더 24가지 모의 전투 비교) · 코스모 추천의 역할 최소 인원 제한 폐지 · 「모의 전투 자동 실행 끄기」·「섹터/지역」 필터 정리<br>11/19: 코스모 게이트 프리즘 시즌 8(모굴루스·바스커빌의 괴수·괴리의 표상, EX 「폭주 : 장벽」) · 코스모 직접 편성(3파티, 중복 금지·팀별 리더/육성/브레이크/난이도·합계) · 자동 3보스 찾기 요약 통일·「직접 편성에서 고치기」·후보 겹침 시 자동 확대 재시도 · 구원자 자동 대상 PC 클라 기준 교정(13명) · 그웬 연출 통일<br>11/15: 전투 판정을 게임 클라 기준으로 정정(버프 해제·면역·회피·지속 피해·행동 순서·전투력 차이 보정) · 클리어 확률이 낮을 때 결과 카드에 안내 · 코스모 힐데 적 정보 추가 · 화력 지표 재계산<br>11/12: 신규 구원자 길레·편애의 마녀 반영 · 격파된 아군도 다음 턴 행동(클라 기준) · 길드 방어전은 시즌 종료로 미오픈</details><details class="note"><summary>출처·면책</summary>출처: 가이드 DB · databook · 나무위키.<br>게임 업데이트·밸런스 패치는 바로 반영되지 않음(관리자가 자료를 갱신한 뒤 반영).<br>그웬 길 배경: 게임 클라이언트 배경 이미지(© STUDIOBSIDE).<br>조사 배너: 자율 여정 타이틀 스타일을 참고한 자체 제작 글자 그림(Noto Sans KR, SIL OFL 1.1).<br>게임 이미지·만화의 권리는 원 권리자에게 있음.<br>저장소 라이선스는 게임 이미지·만화에 적용되지 않음.</details>
 <aside id="drawer" aria-label="보유 구원자와 브레이크 스킬">
  <div class="dhead"><b>내 계정 정보 불러오기</b><button id="dclose" type="button" aria-label="닫기">✕</button></div>
  <div class="mut" style="margin-bottom:10px">내 구원자 정보는 서버 전송 없이 이 브라우저에 저장함.</div>
@@ -451,6 +451,7 @@ summary{padding:9px 4px}
 <script src="party_placement.js"></script>
 <script src="guild_search.js"></script>
 <script src="cosmo_learned.js"></script>
+<script src="recommend_learned.js"></script>
 <script src="placement_search.js"></script>
 <script src="guild_planner.js"></script>
 <script src="placement_page.js"></script>
@@ -755,7 +756,7 @@ function partySyn(keys){const sw=CFG.synergy,hits=[];
   for(const p of (SYN.get(k)||[]))hits.push({p,pts:sw.typeWeight[p.t]*p.s*(sw.confWeight[p.c]??0.6)})}
  return hits.sort((x,y)=>y.pts-x.pts)}
 // 추천 정책 버전(캐시 키): 훑기 항상 켬(11/22)으로 올림 — 예전 끔 캐시(태그 없음)를 다시 쓰지 않게
-function recommendationPolicyTag(){return ["screen-full-2"];}
+function recommendationPolicyTag(){const u=typeof CFG!=="undefined"&&CFG.recommendation?.learnedUnion;return u?.value?["screen-full-2","union-1",JSON.stringify(u)]:["screen-full-2"];}
 function teamValue(combo,defPen){
  let v=combo.reduce((a,x)=>a+x.score,0);
  const g=CFG.weights;const roles=combo.map(x=>x.s.cls);
@@ -1062,7 +1063,7 @@ function simBar(p,rows,st,hasMore,shown=rows[0]){
  return `<div class="qrow simbar">${st8}</div>`}
 // 자동 확인 중이면 보이는 팀 모두 자리·리더 비교 기록이 있어야 끝(simBar «완료»·직접 편성 묶음 directRecoReady 공통)
 function simArrangeDone(rows){if(typeof recoArrangeKick!=="function"||!simAutoOn())return true;const id=recoIdentity();return rows.every(t=>arrGet(id,UiShared.teamKey(t.keys)))}
-function simInvalidate(){if(typeof recoTaskCancel==='function')recoTaskCancel('입력이 바뀜');if(typeof growthCancel==="function")growthCancel();SIMQ.requestId=(SIMQ.requestId||0)+1;clearTimeout(SIMQ.startTimer);SIMQ.screening=false;for(const k in SIMQ.scr){const x=SIMQ.scr[k];if(x.done)continue;if(Object.keys(x.res).length||x.res0&&Object.keys(x.res0).length)scrClose(x);else delete SIMQ.scr[k]}simPoolDrop();SIMQ.eta=null;SIMQ.busy=null;SIMQ.compareKey=null}
+function simInvalidate(){if(typeof recoTaskCancel==='function')recoTaskCancel('입력이 바뀜');if(typeof growthCancel==="function")growthCancel();SIMQ.requestId=(SIMQ.requestId||0)+1;clearTimeout(SIMQ.startTimer);SIMQ.screening=false;for(const k in SIMQ.scr){const x=SIMQ.scr[k];if(x.done)continue;x.union?.abort?.();if(scrHasRes(x))scrClose(x);else delete SIMQ.scr[k]}simPoolDrop();SIMQ.eta=null;SIMQ.busy=null;SIMQ.compareKey=null}
 function simStop(msg,cancelled=false){SIMQ.cancelled=cancelled;const compare=!!SIMQ.compareKey;if(msg){SIMQ.errorDetail=msg;SIMQ.err=/취소|중단/.test(msg)?"중단함":/엔진 준비 시간 초과/.test(msg)?"계산 엔진 준비가 오래 걸려 멈췄음 · 네트워크를 확인하고 다시 시도 필요":/시간 초과/.test(msg)?"계산이 오래 걸려 멈췄음 · 다시 시도하면 끝난 팀은 이어서 계산함":"자료를 불러오지 못했음. 다시 시도 필요";SIMQ.errP=SIMQ.busy;SIMQ.errStage=SIMQ.stage;SIMQ.errCompare=SIMQ.compareKey}simInvalidate();run(compare)}
 // 자동 확인(한 번 눌러 켠 뒤): 결과 없는 파티를 차례로 시뮬. 실패한 스테이지에선 다시 자동으로 돌지 않는다(무한 재시도 방지)
 function simQueue(start){const id=SIMQ.requestId;clearTimeout(SIMQ.startTimer);SIMQ.startTimer=setTimeout(()=>{if(SIMQ.requestId===id&&REQ&&!RECO.timer)start()},0)}
@@ -1240,6 +1241,20 @@ function scrFullKeys(all,pool){if(!all||!all.length||all.some(t=>t.vd!=="hard"))
  return out.length>pool.length?out:null}
 // sc 에 훑기 상태를 붙임: full = 훑을 키(빠른 계산 순), res0 = 1판 결과, fullN = 넘길 수, fullDone
 function scrFullInit(sc,all){const keys=scrFullKeys(all,sc.pool);if(keys){sc.full=keys;sc.res0={};sc.fullN=sc.pool.length;sc.fullDone=false}return sc}
+// Snapshot adapters provide only eligible owned candidates. During regression scans
+// team objects are transient; only actual worker observations are retained.
+function scrUnionContext(sc,all,by,cands,qi,profile,engineKey,party,breakFor,breaks,seed){
+ const settings=typeof CFG!=="undefined"&&CFG.recommendation?.learnedUnion;
+ if(!sc.full||sc.fullDone||!settings?.value||typeof RecommendLearned==="undefined"||!cands)return null;
+ RecommendLearned.init(sc,settings,cands.map(x=>({key:x.s.key,cls:x.s.cls,el:x.s.el})),new Set(partyPool(cands).map(x=>x.s.key)));
+ const units=new Map(cands.map(x=>[x.s.key,x]));
+ const team=keys=>{const known=by.get(UiShared.teamKey(keys));if(known)return known;
+  const b=profile?{growth:1,power:null,...MyInfoReco.team(keys,profile,engineKey)}:qBase(qi,keys);
+  return {keys,combo:keys.map(k=>units.get(k)),ek:keys.map(engineKey),b,base:b.power||(qi.qs.bp?qi.qs.bp*b.growth:null),v:0,vd:'hard',got:null};};
+ const add=keys=>{const k=UiShared.teamKey(keys);if(by.has(k))return by.get(k);const t=team(keys);
+  t.q=Quick.evaluate(t.ek,qi.qs,QK.d.sv,D.pen,qi.prm,t.b.growth,t.b.power,true,t.b.powers);by.set(k,t);return t;};
+ return {team,add,party,engineKey,breakFor,breaks,seed};
+}
 // 훑기 결과 순위(끝난 팀만): scrCmp → 빠른 계산 순서
 function scrFullRank(sc){const pos=new Map(sc.full.map((k,i)=>[k,i]));return Object.keys(sc.res0).sort((a,b)=>scrCmp(sc.res0[a],sc.res0[b])||pos.get(a)-pos.get(b))}
 const scrRoundN=i=>i<0?SCR_FULL.n:SCR_ROUNDS[i].n;
@@ -1267,6 +1282,7 @@ const scrMsg=(i,got,all)=>i<0?`${SCR_ALERT.label} ${UiShared.numText(got)} / ${U
 // 단계 시작(화면·직접 편성 묶음 공통): i = -1 훑기 · 0 · 1
 //  훑기에 처음 들어가면(1판 결과가 아직 없음) 경보 시작(sc.alertAt)을 preMs 뒤로 잡고, 두 전환 시각에 repaint(그 경로의 진행 칸 갱신)를 한 번씩 부름 — 작업자 소식이 없어도(엔진 준비 중) 넘어가게
 function scrLegEnter(sc,i,n,repaint){sc.round=i;sc.left=n;sc.got=0;if(i>=0)return;
+ if(sc.union&&typeof RecommendLearned!=="undefined"){const p=RecommendLearned.progress(sc);sc.left=p.all;sc.got=p.got;if(sc.alertAt)return;}
  const pre=!Object.keys(sc.res0||{}).length;sc.alertAt=Date.now()+(pre?SCR_ALERT.preMs:0);
  if(pre&&repaint)for(const ms of [SCR_ALERT.preStepMs,SCR_ALERT.preMs])setTimeout(()=>{if(!sc.done&&sc.round<0)repaint()},ms+16)}
 const scrPreStep=(sc,now=Date.now())=>sc.alertAt-now>SCR_ALERT.preMs-SCR_ALERT.preStepMs?1:2;
@@ -1293,7 +1309,8 @@ const scrCmp=(a,b)=>(b.t60??b.clear)-(a.t60??a.clear)||b.clear-a.clear||(b.prog?
 //  (먼저 끝난 팀만 32판 결과로 위에 올리면 클리어율과 무관하게 순서가 갈린다 — 판 수가 같은 것끼리만 비교). 못 쓴 32판 결과는 「끝까지 확인」 때 다시 안 돌게 남겨 둔다
 //  동률은 «후보 순서»(sc.pool)로 가른다 — 끝난 순서(작업자 수·배정에 따라 달라짐)로 가르면 같은 입력의 순위가 기기마다 달라진다
 function scrDone(sc){const pos=new Map(sc.pool.map((k,i)=>[k,i]));return Object.keys(sc.res).sort((a,b)=>(pos.get(a)??1e9)-(pos.get(b)??1e9))}
-function scrOrder(sc){if(sc.full&&!sc.fullDone)return scrFullRank(sc);   // 훑기 중에 멈춤: 1판 결과 순
+function scrOrder(sc){if(sc.union&&!sc.fullDone&&typeof RecommendLearned!=="undefined"){const res=RecommendLearned.partial(sc),keys=[...new Set([...sc.full,...(sc.union.sample||[]).map(k=>UiShared.teamKey(k))])],pos=new Map(keys.map((k,i)=>[k,i]));return Object.keys(res).sort((a,b)=>scrCmp(res[a],res[b])||pos.get(a)-pos.get(b));}
+ if(sc.full&&!sc.fullDone)return scrFullRank(sc);   // 훑기 중에 멈춤: 1판 결과 순
  const r1=scrDone(sc).sort((a,b)=>scrCmp(sc.res[a],sc.res[b])),up=sc.up||[];
  if(!up.length||up.some(k=>!sc.res2[k]))return r1;
  const top=up.slice().sort((a,b)=>scrCmp(sc.res2[a],sc.res2[b])),s=new Set(top);return top.concat(r1.filter(k=>!s.has(k)))}
@@ -1302,7 +1319,8 @@ function scrShort(sc){const up=sc.up||[];return sc.pool.some(k=>!sc.res[k])||(up
 function scrClose(sc){sc.order=scrOrder(sc);sc.short=scrShort(sc);sc.done=true;sc.free=false}
 // 중간에 멈춘 예선의 안내(결과 위). 계산 중이 아닐 때만 「끝까지 확인」 단추
 function scrNote(p,st){const sc=SIMQ.scr[scrKey(st,p)];if(!sc||!sc.done||!sc.short)return "";
- const seen=Object.keys(sc.res).length,msg=sc.full&&!sc.fullDone?`중간에 멈춰서 후보 전체 ${sc.full.length}팀 중 ${Object.keys(sc.res0).length}팀만 훑었음`:seen<sc.total?`중간에 멈춰서 후보 ${seen}/${sc.total}팀만 확인했음`:"중간에 멈춰서 상위 팀을 짧게만 확인했음";
+ const seen=Object.keys(sc.res).length,scan=sc.union&&typeof RecommendLearned!=="undefined"?RecommendLearned.progress(sc):null;
+ const msg=sc.full&&!sc.fullDone?(scan?`중간에 멈춰서 전체 훑기 ${scan.all}판 중 ${scan.got}판만 확인했음`:`중간에 멈춰서 후보 전체 ${sc.full.length}팀 중 ${Object.keys(sc.res0).length}팀만 훑었음`):seen<sc.total?`중간에 멈춰서 후보 ${seen}/${sc.total}팀만 확인했음`:"중간에 멈춰서 상위 팀을 짧게만 확인했음";
  return `<div class="scr-short" data-k="scr-short" role="status"><span>${msg}</span>${SIMQ.busy==null?`<button type="button" class="sec" data-scrmore="${p}">끝까지 확인</button>`:""}</div>`}
 // 강제 탐색 판정(결과 위 한 줄): 훑기를 끝까지 한 스테이지에서만. 1안 클리어율 0 = «관리 실패», 0 초과 = «루트 확보». 훑기가 없었거나 중간에 멈췄으면 표시 없음
 function scrVerdict(sc,r){if(!sc||!sc.done||!sc.full||!sc.fullDone||sc.short||!r)return "";const ok=r.clear>0;
@@ -1311,7 +1329,7 @@ function scrVerdict(sc,r){if(!sc||!sc.done||!sc.full||!sc.fullDone||sc.short||!r
 // 옆의 「취소」(data-simcancel)는 본선으로 가지 않고 전부 멈춘다(끝난 팀 순위는 남고 「끝까지 확인」으로 이어 갈 수 있음)
 function scrStop(){const st=cur&&cur[$("stage").value],sc=st&&SIMQ.busy!=null?SIMQ.scr[scrKey(st,SIMQ.busy)]:null;
  if(!SIMQ.screening||!sc||!scrHasRes(sc)){simStop("취소함",true);return}simInvalidate();run()}
-function scrHasRes(sc){return Object.keys(sc.res).length>0||!!(sc.res0&&Object.keys(sc.res0).length)}
+function scrHasRes(sc){return !!(sc.union&&Object.keys(sc.union.observed).length)||Object.keys(sc.res).length>0||!!(sc.res0&&Object.keys(sc.res0).length)}
 function simScreen(p,more){const c=contents[$("content").value],st=cur&&cur[$("stage").value],box=LASTQ[p];if(!st||!box||SIMQ.busy!=null)return false;
  const k=scrKey(st,p),ck=t=>UiShared.teamKey(t.keys),byKey=new Map(box.all.map(t=>[ck(t),t]));
  const R1=SCR_ROUNDS[1];let sc=SIMQ.scr[k];
@@ -1330,7 +1348,7 @@ function simScreen(p,more){const c=contents[$("content").value],st=cur&&cur[$("s
  // 후보를 대기열(simDispatch)로 작업자들에 맡기고, 모두 끝나면 next. i = 단계(-1 훑기·0·1), 결과는 훑기 sc.res0 · 1차 sc.res · 2차 sc.res2
  // 2차는 1차의 8판을, 1차는 훑기의 1판을 다시 돌리지 않는다(scrPrior): 앞 단계 결과의 raw(판별 원시값, 작업자가 준 문자열 그대로)를 되돌려 보내 뒤쪽 판(run_offset 8·1)만 돌리고
  //  작업자(파이썬 web.merge_summary)가 합친다 — 합친 값은 32판을 한 번에 돌린 것과 같다(tests/screen_merge_test.py). raw 가 없으면(옛 엔진 묶음) 32판을 다 돈다
- const leg=(i,keys,next)=>{const n=scrRoundN(i),into=i<0?sc.res0:i?sc.res2:sc.res;{const sync=()=>{const pv=document.querySelector('[data-k="progress"]');if(pv&&SIMQ.screening)simProgressSync(pv,st)};scrLegEnter(sc,i,keys.length,sync);sync()}id=SIMQ.requestId=(SIMQ.requestId||0)+1;
+ const leg=(i,keys,next)=>{const n=scrRoundN(i),into=i===-2?sc.union.observed:i<0?sc.res0:i?sc.res2:sc.res;{const sync=()=>{const pv=document.querySelector('[data-k="progress"]');if(pv&&SIMQ.screening)simProgressSync(pv,st)};scrLegEnter(sc,i,keys.length,sync);sync()}id=SIMQ.requestId=(SIMQ.requestId||0)+1;
   const rid=id,live=()=>SIMQ.requestId===rid,ws=scrPool(keys.length);
   const prior=key=>scrPrior(sc,i,key),runsOf=key=>{const pr=prior(key);return pr?n-pr.off:n};
   // 무진행 상한(작업자별, simWatch): 엔진 준비 전에는 내려받기 상한, 준비 뒤에는 팀 하나 상한. 전체 시간 상한은 없다
@@ -1353,7 +1371,13 @@ function simScreen(p,more){const c=contents[$("content").value],st=cur&&cur[$("s
   chk()};
  const end=()=>{finish();run()};
  if(SIMQ.loaded&&SIMQ.w)SIMQ.w._ready=true;
- recoScreenSequence(sc,R1.top,byKey,leg,end);
+ const sequence=()=>recoScreenSequence(sc,R1.top,byKey,leg,end);
+ const uc=typeof RecommendLearned!=="undefined"&&typeof CFG!=="undefined"&&CFG.recommendation?.learnedUnion?.value&&sc.full&&!sc.fullDone?scrUnionContext(sc,box.all,byKey,box.cands,quickIn(c,st),miMode()?miProfile():null,ekey,simParty,teamBreak,breakOwned(),SIMQ.seed):null;
+ if(uc){id=SIMQ.requestId=(SIMQ.requestId||0)+1;const stale=()=>sc.done||SIMQ.requestId!==id;
+  const sync=()=>{const pv=document.querySelector('[data-k="progress"]');if(pv)simProgressSync(pv,st)};scrLegEnter(sc,-1,sc.union.total,sync);sync();
+  RecommendLearned.prepare(sc,uc,(i,keys)=>new Promise((resolve,reject)=>{sc.union.abort=()=>reject(Error('취소'));leg(i,keys,()=>{sc.union.abort=null;resolve()})}),stale)
+   .then(()=>{if(stale())return;RecommendLearned.restore(sc,box.all);sequence()}).catch(e=>{if(!stale())simStop(e.message)});
+ }else sequence();
  return true}
 // Headless sequence shared by the recommendation UI and DIRECT bundle adapter.
 // 훑기(sc.full, scrFullInit)가 있으면 먼저 후보 전체를 1판씩 돌리고(leg(-1)), 그 상위 sc.fullN 으로 sc.pool 을 바꾼 뒤 예선 1·2차
@@ -1467,7 +1491,7 @@ function recoPlanStages(st){
   // 끝난 단계도 목록에 남김(단계 번호 «n/3»이 줄지 않게) — 시간 0
   if(scrOn()&&sc?.done)add("pre",S,1,1,0);
   if(scrOn()&&!sc?.done){const r=sc?.round,full=sc?.full&&(!sc.fullDone||r!=null);
-   if(sc?.full&&!sc.fullDone)add("scan",S,sc.full.length,r===-1?sc.got||0:0,SCR_FULL.n,"scan",ck(sc.full.length));
+   if(sc?.full&&!sc.fullDone){const n=sc.union?.total||sc.full.length;add("scan",S,n,r<0?sc.got||0:0,SCR_FULL.n,"scan",ck(n));}
    const n0=r===0?sc.left:sc?.full?sc.fullN:sc?.pool?.length||R0.q+R0.v;
    if(!(r>0))add("pre1",S,n0,r===0?sc.got||0:0,R0.n-(full?SCR_FULL.n:0),"pre",ck(n0));
    const n1=r===1?sc.left:Math.min(R1.top,n0);add("pre2",S,n1,r===1?sc.got||0:0,R1.n-R0.n,"pre",ck(n1));}
@@ -1555,7 +1579,7 @@ function runCore(skipAuto=false){
   const plan=p===1?initial:recoCandidates(c,st,own,used,defPen,qi0),{cands,ranked}=plan;
   if(cands.length<4){html+=`<div class="party">${Ux.gwenError("few")}파티 ${p}: 후보가 4명 미만임.</div>`;break}
   const list=buildCands(ranked);
-  const qi=qi0,qt=plan.qt;jointFirst(qt,p);LASTQ[p]=qt&&qt.length?{all:qt,rows:quickRows(qt,st,p),total:new Set(qt.map(t=>UiShared.teamKey(t.keys))).size}:null;
+  const qi=qi0,qt=plan.qt;if(typeof RecommendLearned!=="undefined"&&qt)RecommendLearned.restore(SIMQ.scr[scrKey(st,p)],qt);jointFirst(qt,p);LASTQ[p]=qt&&qt.length?{all:qt,cands,rows:quickRows(qt,st,p),total:new Set(qt.map(t=>UiShared.teamKey(t.keys))).size}:null;
   let qpick=null;
   if(qt&&qt.length){for(const t of LASTQ[p].rows){const k=UiShared.teamKey(t.keys);if(list.find(x=>x.key===k))continue;list.push({combo:t.combo,v:t.v,got:t.got,rank:null,key:k})}
    const qk=UiShared.teamKey(LASTQ[p].rows[0].keys);qpick=list.find(x=>x.key===qk)}

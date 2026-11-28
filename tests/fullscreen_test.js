@@ -10,7 +10,8 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('nod
 const ROOT=path.resolve(__dirname,'..'),html=fs.readFileSync(path.join(ROOT,'party_template.html'),'utf8'),rt=fs.readFileSync(path.join(ROOT,'recommend_runtime.js'),'utf8');
 const section=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i);assert(i>=0&&j>i,'구간 없음: '+a);return s.slice(i,j)};
 const CFG0=require('../party_contents.json');
-assert(!('recommendation' in CFG0),'스위치 없음(항상 켬)');
+// F 동결 계약은 학습 합집합만 끈다. 기존 훑기 자체는 항상 켬.
+CFG0.recommendation={...CFG0.recommendation,learnedUnion:{...CFG0.recommendation?.learnedUnion,value:false}};
 const plain=x=>JSON.parse(JSON.stringify(x));
 const mk=(keys,vd,v)=>({keys,combo:keys.map(key=>({s:{key}})),vd,v,q:{rounds:1,left:0}});
 const NAMES=Array.from({length:200},(_,i)=>'t'+String(i).padStart(3,'0'));

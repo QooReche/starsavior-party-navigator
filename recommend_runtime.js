@@ -41,15 +41,16 @@ function recoSnapshot(){
       const k=UiShared.teamKey([...used]);
       if(!plans.has(k))plans.set(k,recoCandidates(c,st,own,used,defPen,qi,profile,scoring));
       const qt=plans.get(k).qt;if(!qt?.length)return null;
+      if(typeof RecommendLearned!=='undefined')RecommendLearned.restore(SIMQ.scr[screenKey(p)],qt);
       const mk=moreKey(st,p),rows=quickRows(qt,st,p,{n:more[p]||SIMQ.more[mk]||3,sc:SIMQ.scr[screenKey(p)],result,joint});
-      boxes[p]=LASTQ[p]={all:qt,rows,total:new Set(qt.map(t=>ckey(t.combo))).size};
+      boxes[p]=LASTQ[p]={all:qt,cands:plans.get(k).cands,rows,total:new Set(qt.map(t=>ckey(t.combo))).size};
       const forced=picks[c.key+'|'+st.tab+'|'+st.name+'|'+p],chosen=forced&&qt.find(t=>ckey(t.combo)===forced)||rows[0];
       chosen?.keys.forEach(k=>used.add(k));
     }
     SCROWN=scrown;JOINT=joint;return boxes[wanted];
   }
   const meta=directRecoMeta(c,st,n);
-  return {key:recoIdentity(),c,st,info,profile,qi,scoring,defPen,own,breakFor,party:x.party,sig,
+  return {key:recoIdentity(),c,st,info,profile,qi,scoring,defPen,own,breakFor,breaks:have,engineKey,party:x.party,sig,
     partyAt:(t,arr)=>simParty(t,engineKey,arr),partyRule:t=>simParty(t,engineKey,arrangeOf(t.combo,true)),
     sigRule:t=>simSignature({...x,party:t2=>simParty(t2,engineKey,arrangeOf(t2.combo,true))},st,t,breakFor(t)?.name||null,n,refined),
     sigAt:(t,arr)=>simSignature({...x,party:t2=>simParty(t2,engineKey,arr)},st,t,breakFor(t)?.name||null,n,refined),screenKey,n,seed,options:copy(simOpt(c.key)),plan,result,meta,
@@ -69,7 +70,10 @@ function recoEvaluate(snapshot,task,jobs,n,{screen=false,label=null,text=null,on
     const finish=error=>{if(ended)return;ended=true;task.stop=null;if(error){simPoolDrop(task.owner,id);reject(Error(error));}else resolve();};
     task.stop=()=>finish('중단함');
     const arm=simWatch(ws,()=>simTeamLimit(n),live,ready=>finish(ready?'계산 시간 초과':'계산 엔진 준비 시간 초과'));
-    let got=0;task.progress=0;recoProgressPaint(task);
+    // 표본·풀 밖·F는 모두 1판: 단계 끝에 줄어드는 대여 수 대신 공통 풀 용량으로 남은 전체 판을 잰다.
+    const unionRemaining=()=>SIMQ.rateS?(task.sc.left-task.sc.got)*SIMQ.rateS/Math.max(1,scrWorkers()):null;
+    let got=0;task.progress=task.sc?.union&&task.sc.round<0?task.sc.got/task.sc.left:0;
+    if(task.sc?.union&&task.sc.round<0)task.remaining=unionRemaining();recoProgressPaint(task);
     // 진행·결과 칸 갱신은 SearchExecutor.PAINT_MS 간격으로만(훑기 A-1, 결과 불변). 끝(done)에는 밀린 갱신을 바로 함
     const paint=SearchExecutor.throttle(()=>{recoProgressPaint(task);directResultsPaint();},SearchExecutor.PAINT_MS,live);
     simDispatch(ws,jobs,{owner:task.owner,id,live,arm,chunk:screen?SearchExecutor.chunkSize(jobs.length,ws.capacity):1,     // 훑기·예선 묶음(A-2), 본선은 팀 하나씩
@@ -79,8 +83,8 @@ function recoEvaluate(snapshot,task,jobs,n,{screen=false,label=null,text=null,on
       stage(w,m){if(m.msg==='준비 끝')SIMQ.loaded=true;if(/^시뮬 \d+\//.test(m.msg||''))w._t=Date.now();},
       team(j,m,w){if(m.result.ver!==task.engine){finish('엔진 버전이 바뀜 · 다시 시도');return;}
         if(w._t)simRateAdd((Date.now()-w._t)/(j.runs||n),screen?'scr':'final');w._t=0;
-        onTeam(j,{...m.result,n});got++;task.progress=got/jobs.length;task.message=text?text(got,jobs.length):`${label||(screen?'예선':'본선')} ${got}/${jobs.length}팀`;
-        const rate=screen?SIMQ.rateS:SIMQ.rate;task.remaining=rate?(jobs.length-got)*n*rate/Math.max(1,ws.length):null;
+        onTeam(j,{...m.result,n});got++;task.progress=task.sc?.union&&task.sc.round<0?task.sc.got/task.sc.left:got/jobs.length;task.message=text?text(got,jobs.length):`${label||(screen?'예선':'본선')} ${got}/${jobs.length}팀`;
+        const rate=screen?SIMQ.rateS:SIMQ.rate;task.remaining=task.sc?.union&&task.sc.round<0?unionRemaining():rate?(jobs.length-got)*n*rate/Math.max(1,ws.length):null;
         SIMQ.msg=task.message;paint();
       },done(){paint.flush();finish();},error:msg=>{paint.cancel();finish(msg);}});
   });
@@ -92,15 +96,21 @@ function recoScreenCalculate(snapshot,task,p,box){
   if(!sc||sc.done)sc=SIMQ.scr[key]=scrFullInit({done:false,order:[],n:pool.length,total:pool.length,pool,res:{},res2:{},up:null,round:0,left:pool.length},box.all);
   if(pool.length<=3){sc.done=true;sc.order=pool;return Promise.resolve();}
   SIMQ.screening=true;task.message='예선 준비 중';task.sc=sc;   // 관측 경보(scrAlertOf)가 읽음
+  const uc=typeof scrUnionContext==='function'?scrUnionContext(sc,box.all,by,box.cands,snapshot.qi,snapshot.profile,snapshot.engineKey,snapshot.party,snapshot.breakFor,snapshot.breaks,snapshot.seed):null;
   return new Promise((resolve,reject)=>{
-    const leg=(i,keys,next)=>{
+    const leg=(i,keys,next,fail=reject)=>{
       // i = -1 은 후보 전체 훑기(scrFullInit, 전원 «못 깸» 스테이지만) — 1판. 앞 단계 판 이어 쓰기는 화면과 같은 scrPrior·scrLegOpt
       const n=scrRoundN(i);scrLegEnter(sc,i,keys.length,()=>{if(RECO.task===task){recoProgressPaint(task);directResultsPaint();}});
       const jobs=keys.map(key=>{const t=by.get(key),pr=scrPrior(sc,i,key);return {key,party:snapshot.party(t),runs:pr?n-pr.off:n,
         options:{break_skill:snapshot.breakFor(t),...scrLegOpt(pr)}};});
-      recoEvaluate(snapshot,task,jobs,n,{screen:true,...(i<0?{label:SCR_ALERT.label,text:(got,all)=>scrMsg(-1,got,all)}:{}),onTeam(j,r){(i<0?sc.res0:i?sc.res2:sc.res)[j.key]=r;sc.got++;}}).then(next,reject);
+      return recoEvaluate(snapshot,task,jobs,n,{screen:true,...(i<0?{label:SCR_ALERT.label,text:(got,all)=>scrMsg(-1,sc.union?sc.got:got,sc.union?sc.left:all)}:{}),onTeam(j,r){(i===-2?sc.union.observed:i<0?sc.res0:i?sc.res2:sc.res)[j.key]=r;sc.got++;}}).then(next,fail);
     };
-    recoScreenSequence(sc,SCR_ROUNDS[1].top,by,leg,()=>{scrClose(sc);SIMQ.screening=false;resolve();});
+    const sequence=()=>recoScreenSequence(sc,SCR_ROUNDS[1].top,by,leg,()=>{scrClose(sc);SIMQ.screening=false;resolve();});
+    if(uc){const repaint=()=>{if(RECO.task===task){recoProgressPaint(task);directResultsPaint();}};
+      scrLegEnter(sc,-1,sc.union.total,repaint);repaint();
+      RecommendLearned.prepare(sc,uc,(i,keys)=>new Promise((done,fail)=>leg(i,keys,done,fail)),()=>task.cancelled||RECO.task!==task||snapshot.key!==recoIdentity())
+        .then(()=>{RecommendLearned.restore(sc,box.all);sequence();},reject);
+    }else sequence();
   });
 }
 // ── 현장 재조사(11/23): 아래 자리·리더 비교를 화면에 보여 주는 상태 하나. recoArrange 가 단계·끝난 조합 수를 알리고(recheckNote),
