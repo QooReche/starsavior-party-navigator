@@ -5,7 +5,8 @@ const {createRequire}=require('node:module'),{performance}=require('node:perf_ho
 const {harness}=require('./guild_daily_page_test'),{fixture}=require('./guild_daily_test');
 const read=f=>fs.readFileSync(require.resolve('../'+f),'utf8'),plain=x=>JSON.parse(JSON.stringify(x));
 const template=read('party_template.html'),executor=read('search_executor.js'),cosmo=read('cosmo_search.js'),dailyPage=read('guild_daily_page.js');
-function setup({templateSource=template,executorSource=executor,cosmoSource=cosmo,pageSource=dailyPage}={}){
+const daily=read('guild_daily.js');
+function setup({templateSource=template,executorSource=executor,cosmoSource=cosmo,pageSource=dailyPage,dailySource=daily}={}){
   const {c,elements}=harness(pageSource),f=fixture(12),events={},fetches=[];
   const life={created:0,active:0,max:0,requests:0},trace=[];
   c.engine='engine-a';c.D.guild=f.G;c.R=f.roster;c.MI.profiles.op={results:f.results};c.MI.profiles.cosmo={results:f.results};
@@ -50,7 +51,7 @@ function setup({templateSource=template,executorSource=executor,cosmoSource=cosm
     vm.runInContext('(function(require,module){'+source+'\n})',c,{filename:file})(requireLocal,mod);
     return mod.exports;
   }
-  c.CosmoSearch=module('cosmo_search.js',cosmoSource);c.GuildDaily=module('guild_daily.js');c.GuildPlanner=module('guild_planner.js');
+  c.CosmoSearch=module('cosmo_search.js',cosmoSource);c.GuildDaily=module('guild_daily.js',dailySource);c.GuildPlanner=module('guild_planner.js');
   c.GuildView=require('../guild_view');
   const options=c.guildDailyOptions;
   c.guildDailyOptions=()=>({...options(),nowMs:Date.parse('2026-11-26T05:00:00+09:00'),workers:1});
@@ -89,6 +90,47 @@ async function reuse(sources){
     assert.equal(fetches.length,4);assert(fetches.every(f=>f.url==='sim/manifest.json'&&f.options.cache==='no-cache'));
     c.fetch=async()=>({ok:false});await c.cosmoSearchStart();assert.equal(c.CSR.phase,'err');
     assert.equal(life.active,0,'manifest failure closes retained cosmo worker');
+  }finally{h.close();}
+}
+async function growthVersion(kind,version,sources){
+  const h=setup(sources),{c,life,trace}=h;
+  const state=kind==='cosmo'?c.CSR:c.GSR,profile=c.MI.profiles[kind==='cosmo'?'cosmo':'op'];
+  const data=kind==='cosmo'?c.D.cosmoRaid:c.D.guild;
+  const label=kind+' growth '+version;
+  let guildInput;
+  const planner=c.GuildPlanner.search;
+  c.GuildPlanner.search=cx=>{guildInput=cx;return planner(cx);};
+  // Guild's page resets even with profileOverride. Re-enter its real planner
+  // with the captured page input to exercise the retained session without reset.
+  const run=async()=>{
+    let out;
+    if(kind==='cosmo')out=await c.cosmoSearchStart(state,profile);
+    else if(!guildInput)out=await c.guildDailyStart(state,profile);
+    else out=await planner({...guildInput,engineVersion:c.engine});
+    assert.equal(state.phase,'done',state.msg);
+    assert(out?.rows.length>0,label+' evaluates results');
+    if(kind==='cosmo')assert(out.rows[0].teams.every(t=>t.st.frac>0),label+' battle progresses');
+    const sum=kind==='cosmo'?out.rows[0].sum:out.sum;
+    assert(sum>0,label+' positive score');
+    return plain({rows:out.rows,sum});
+  };
+  const games=()=>trace.reduce((n,m)=>n+m.n_runs*m.teams.length,0);
+  try{
+    const initial=await run(),session=state.session,first=session.pool.get(0),initialGames=games();
+    assert(initialGames>0,label+' initially dispatches battles');
+    assert([...session.caches.values()].some(cache=>cache.size>0),label+' populates cache');
+    const requests=life.requests;
+    assert.deepEqual(await run(),initial,label+' unchanged results');
+    assert.equal(state.session,session,label+' retains session');
+    assert.equal(life.requests,requests,label+' unchanged version reuses all battles');
+    if(version==='engine')c.engine='engine-b';else data.dataVersion='synthetic-b';
+    const changed=await run();
+    assert.equal(games()-initialGames,initialGames,label+' version change recomputes every battle');
+    assert.equal(changed.sum,initial.sum,label+' deterministic score unchanged');
+    assert(first.dead,label+' version change retires loaded worker');
+    const refreshed=life.requests;
+    assert.deepEqual(await run(),changed,label+' refreshed results');
+    assert.equal(life.requests,refreshed,label+' refreshed cache is reusable');
   }finally{h.close();}
 }
 async function handoff(sources){
@@ -166,6 +208,7 @@ async function cleanup(sources){
 }
 async function main(){
   await reuse();await handoff();await cleanup();await detachedPool();await creationRace();
+  for(const kind of ['cosmo','guild'])for(const version of ['engine','data'])await growthVersion(kind,version);
   const mutate=(source,from,to)=>{assert(source.includes(from),'mutation anchor exists: '+from);return source.replace(from,to);};
   const cosmoGuard="if(typeof CSR!=='undefined'&&CSR.phase!=='run'&&!CSR.session?.active&&typeof csSessionRelease==='function')csSessionRelease();";
   const sharedHook=template.slice(template.indexOf(' beforeCreateWorker:()=>{'),template.indexOf('\n',template.indexOf(' beforeCreateWorker:()=>{')));
@@ -182,7 +225,25 @@ async function main(){
     [cleanup,{templateSource:mutate(template,'if(stale()){session.close();if(CSR.session===session)CSR.session=null;}','if(stale()){csSessionRelease(CSR);}')},/stale completion closes old session/]
   ];
   for(const [check,sources,error] of mutations)await assert.rejects(()=>check(sources),error);
-  console.log('PASS cosmo S2 page: same/changed-input reuse, engine-only refresh, guild/cosmo/shared handoff, creation race, active/growth guards, cancel/error/stale cleanup, detached globals; '+mutations.length+' killed mutations');
+  // Remove every data-version guard: session identity, input signature (including
+  // the planner's copy in S), and per-job cache key. Any remaining guard masks reuse.
+  let guildNoData=daily;
+  for(const [from,to] of [
+    ['cx.G.dataVersion,cx.engineVersion','cx.engineVersion'],
+    ["'guild-follow-v1',cx.G.season.id,cx.G.dataVersion,day.date,cx.S,",
+      "'guild-follow-v1',cx.G.season.id,day.date,{...cx.S,dataVersion:undefined},"],
+    ['GS.jobKey(keys,level,effectiveSupport,sets,brk,party,G)',
+      'GS.jobKey(keys,level,effectiveSupport,sets,brk,party,{...G,dataVersion:undefined})']
+  ])guildNoData=mutate(guildNoData,from,to);
+  const versionMutations=[
+    ['cosmo','engine',{cosmoSource:mutate(cosmo,'cx.dataVersion,cx.engineVersion','cx.dataVersion')}],
+    ['cosmo','data',{cosmoSource:mutate(cosmo,'cx.base,cx.dataVersion,cx.engineVersion','cx.base,cx.engineVersion')}],
+    ['guild','engine',{dailySource:mutate(daily,'cx.G.dataVersion,cx.engineVersion','cx.G.dataVersion')}],
+    ['guild','data',{dailySource:guildNoData}]
+  ];
+  for(const [kind,version,sources] of versionMutations)
+    await assert.rejects(()=>growthVersion(kind,version,sources),new RegExp(kind+' growth '+version+' version change recomputes every battle'));
+  console.log('PASS cosmo S2 page: same/changed-input reuse, engine-only refresh, guild/cosmo/shared handoff, creation race, active/growth guards, cancel/error/stale cleanup, detached globals; growth cache engine/data isolation in cosmo/guild; '+(mutations.length+versionMutations.length)+' killed mutations');
 }
 if(require.main===module)main().catch(e=>{console.error(e);process.exitCode=1;});
 module.exports={setup,search,reuse,handoff,cleanup,detachedPool,creationRace};
