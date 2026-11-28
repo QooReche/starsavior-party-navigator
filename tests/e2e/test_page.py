@@ -2996,7 +2996,9 @@ def test_ux_step12(browser, ctx):
             assert page.evaluate('document.documentElement.scrollWidth <= innerWidth'), state
             # 그웬 그림은 실제로 보일 때까지 주소(src)를 받지 않는다(닫힌 서랍·숨긴 탭). 주소가 있거나 보이는 그림만 깨졌는지 본다
             # 위 스크롤의 IntersectionObserver가 정지/움직임 그림을 교체한 뒤의 로딩도 기다린다.
-            broken = "[...document.images].filter(i=>i.getBoundingClientRect().width&&(i.hasAttribute('src')||i.checkVisibility({visibilityProperty:true}))).filter(i=>!(i.complete&&i.naturalWidth>0))"
+            # 그웬 그림은 뷰포트에 들어와야 주소를 받는 지연 로딩(ux_ui.js IntersectionObserver)이라, 화면 밖이면서 아직 주소가 없는 것은 정상.
+            # 부하 때 위 스크롤 뒤 안내 칸이 다시 그려지면 첫 화면 아래 그림이 새 요소(주소 없음)로 남았음 — 11/28 진단으로 확인(welcome, top 1004px)
+            broken = "[...document.images].filter(i=>{const r=i.getBoundingClientRect();if(!r.width)return false;if(i.hasAttribute('src'))return true;if(i.dataset.gwenArt&&(r.bottom<=0||r.top>=innerHeight))return false;return i.checkVisibility({visibilityProperty:true})}).filter(i=>!(i.complete&&i.naturalWidth>0))"
             try:
                 page.wait_for_function(f"{broken}.length===0", timeout=15000)
             except Exception:
